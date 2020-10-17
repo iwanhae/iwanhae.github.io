@@ -23,6 +23,12 @@
 @import "partials/layout/article.scss";
 @import "partials/layout/taxonomy.scss";
 @import "partials/layout/404.scss";
+@font-face {
+    font-family: 'RIDIBatang';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
 
 a {
     text-decoration: none;
