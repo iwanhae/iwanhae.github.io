@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Algorithms on iWan</title><link>https://iwanhae.github.io/categories/algorithms/</link><description>Recent content in Algorithms on iWan</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><lastBuildDate>Mon, 21 Sep 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://iwanhae.github.io/categories/algorithms/index.xml" rel="self" type="application/rss+xml"/><item><title>엔트로피 인코딩 (엔트로피 부호화)</title><link>https://iwanhae.github.io/p/entropy_encoding/</link><pubDate>Mon, 21 Sep 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/entropy_encoding/</guid><description>무손실 압축같은 분야에서 애용되는 기법으로
+여기서 엔트로피(entropy)는
+&amp;lt;통신&amp;gt; 정보량의 기대치를 이르는 말. [비슷한 말] 평균 정보량. 이라는 의미로 사용된다.
+말그대로 기대되는 정보량에대해 부호화(encoding)을 한다는것이다.
+예를들면
+10001010110101001111010100000 같은걸
+1(0, 3개)(10,2개)1(10,2개).....(0,5개) 와 같이 부호화 해준다는 거다.
+대표적 엔트로피 인코딩 기법으론 허프만 부호화, 범위 부호화와 산술 부호화, 런 렝스 코딩 등이 있다.</description></item></channel></rss>
