@@ -16,7 +16,7 @@ DefaultContentLanguage = "ko"                   # Theme i18n support
     rssFullContent = true
     
     [params.dateFormat]
-        published = "2006년 07월 01일"
+        published = "2006년 01월 02일"
         lastUpdated = "LAST MODIFIED, Jan 02, 2006"
         
     [params.sidebar]
