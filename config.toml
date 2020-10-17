@@ -1,0 +1,97 @@
+baseurl = "https://blog.iwanhae.ga"
+languageCode = "ko-kr"
+theme = "stack"
+paginate = 10
+title = "iWan"
+disqusShortname = "stack"            # Change it to your Disqus shortname before using
+DefaultContentLanguage = "ko"                   # Theme i18n support
+
+[permalinks]
+    post = "/p/:slug/"
+    page = "/:slug/"
+    
+[params]
+    mainSections = ["post"]
+    featuredImageField = "image"
+    rssFullContent = true
+    
+    [params.dateFormat]
+        published = "2006년 07월 01일"
+        lastUpdated = "Jan 02, 2006 15:04 KST"
+        
+    [params.sidebar]
+        emoji = "😎️"
+        avatar = "img/avatar.png"
+        subtitle = "#include \"Hi.h\""
+        
+    [params.article]
+        math = true
+        [params.article.license]
+            enabled = true 
+            default = "Licensed under CC BY-NC-SA 4.0"
+            
+    [params.comments]
+        enabled = true
+        provider = "disqus"         # Available: disqus, utterances    
+        [params.comments.utterances]
+            repo = ""
+            issueTerm = "pathname"
+            label = ""             # Optional
+            theme = "preferred-color-scheme"
+            
+    [params.widgets]
+        enabled = ['archives', 'tag-cloud']
+        [params.widgets.archives]
+            limit = 5
+            ### Archives page relative URL
+            path = "archives"       
+        [params.widgets.tagCloud]
+            limit = 10
+            
+    [params.opengraph]
+        [params.opengraph.twitter]
+            site = ""
+            card = "summary_large_image"
+            
+    [params.defaultImage]
+        [params.defaultImage.opengraph]
+            enabled = true
+            local = false
+            src = ""
+            
+[menu]
+    [[menu.main]]
+        identifier = "home"
+        name = "Home"
+        url = "/"
+        weight = -100
+        pre = "home"
+    [[menu.main]]
+        identifier = "about-cn"
+        name = "About"
+        url = "about"
+        weight = -90
+        pre = "user"
+    [[menu.main]]
+        identifier = "archives"
+        name = "Archives"
+        url = "archives"
+        weight = -70
+        pre = "archives"
+
+[related]
+    includeNewer = true
+    threshold = 60
+    toLower = false
+
+    [[related.indices]]
+        name = "tags"
+        weight = 100
+
+    [[related.indices]]
+        name = "categories"
+        weight = 200
+
+[markup]
+    [markup.highlight]
+        noClasses = false
