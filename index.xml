@@ -1,4 +1,306 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>iWan</title><link>https://iwanhae.github.io/</link><description>Recent content on iWan</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><lastBuildDate>Tue, 22 Sep 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://iwanhae.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>공기저항을 고려한 자유낙하</title><link>https://iwanhae.github.io/p/free-fall-with-air-resistance/</link><pubDate>Tue, 22 Sep 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/free-fall-with-air-resistance/</guid><description>&lt;img src="https://iwanhae.github.io/p/free-fall-with-air-resistance/clipart807887.png" alt="Featured image of post 공기저항을 고려한 자유낙하" />&lt;pre>&lt;code>k는 현재의 공기저항 상수
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>iWan</title><link>https://iwanhae.github.io/</link><description>Recent content on iWan</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><lastBuildDate>Sat, 12 Dec 2015 00:00:00 +0000</lastBuildDate><atom:link href="https://iwanhae.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>리눅스, 하드디스크를 절전모드로 두기 (hdparm)</title><link>https://iwanhae.github.io/p/introducing-hdparm/</link><pubDate>Sat, 12 Dec 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introducing-hdparm/</guid><description>&lt;img src="https://iwanhae.github.io/p/introducing-hdparm/harddrive-icon-18.jpg" alt="Featured image of post 리눅스, 하드디스크를 절전모드로 두기 (hdparm)" />&lt;h1 id="서론">서론&lt;/h1>
+&lt;p>&lt;img src="https://iwanhae.github.io/img_server/server_2.jpg" alt="" />
+&lt;img src="https://iwanhae.github.io/img_server/server_1.png" alt="" />&lt;/p>
+&lt;p>요런식으로 서버를 운영하다보니 하드디스크 돌아가는 소리가 좀 거슬린다&amp;hellip;.
+(특히나 소음 심하다는 Hitachi제 하드디스크&amp;hellip;.)&lt;/p>
+&lt;p>그래서 하드디스크를 절전상태로 두는 간단한 방법을 소개한다.&lt;/p>
+&lt;h1 id="본론">본론&lt;/h1>
+&lt;p>일단 하드디스크를 절전상태로 들어가게해주는 &lt;strong>&amp;ldquo;hdparm&amp;rdquo;&lt;/strong> 을 각자 알아서 설치해 주자. 대중적인 프로그램이니깐 기본적으로 설치되있는 경우도 꽤 많고 설치되있지 않다해도 apt나 yum으로 쉽게 설치 가능하다.&lt;/p>
+&lt;p>그 후 자신의 설정할 하드디스크의 경로를 알아내자. ROOT권한으로 &lt;code>fdisk -ls&lt;/code>를 입력하면 현재 인식되있는 모든 저장장치의 정보를 볼수있다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">Disk /dev/sda: 320.1 GB, &lt;span class="m">320072933376&lt;/span> bytes
+&lt;span class="m">255&lt;/span> heads, &lt;span class="m">63&lt;/span> sectors/track, &lt;span class="m">38913&lt;/span> cylinders, total &lt;span class="m">625142448&lt;/span> sectors
+&lt;span class="nv">Units&lt;/span> &lt;span class="o">=&lt;/span> sectors of &lt;span class="m">1&lt;/span> * &lt;span class="nv">512&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">512&lt;/span> bytes
+Sector size &lt;span class="o">(&lt;/span>logical/physical&lt;span class="o">)&lt;/span>: &lt;span class="m">512&lt;/span> bytes / &lt;span class="m">512&lt;/span> bytes
+I/O size &lt;span class="o">(&lt;/span>minimum/optimal&lt;span class="o">)&lt;/span>: &lt;span class="m">512&lt;/span> bytes / &lt;span class="m">512&lt;/span> bytes
+Disk identifier: 0xf83c5fbd
+Device Boot Start End Blocks Id System
+/dev/sda1 &lt;span class="m">2048&lt;/span> &lt;span class="m">625141759&lt;/span> &lt;span class="m">312569856&lt;/span> &lt;span class="m">83&lt;/span> Linux
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>/dev/sda1&lt;/code>은 파티션에 관한 정보고 여기서 필요한건 &lt;code>/dev/sda&lt;/code>이다.&lt;/p>
+&lt;p>&lt;code>/dev/sda&lt;/code>라는 정보를 알아냈으면 &lt;code>hdparm -S 12 /dev/sda&lt;/code> 라 입력함으로서 1분후에 하드디스크가 꺼지게 할수 있다.&lt;/p>
+&lt;p>여기서 이상한 점은 &lt;code>12&lt;/code>라는 숫자가 &lt;code>1분&lt;/code>을 의미하는 것이다.&lt;/p>
+&lt;p>명확이 이런식으로 한 이유는 모르겠지만 12가 1분이 된 이유는 12에다 5를 곱하면 60이 되고 60초는 곧 1분이 되기 때문이다.&lt;/p>
+&lt;p>즉 &lt;code>입력된 숫자의 5를 곱한값의 초&lt;/code> 후에 하드디스크가 절전모드로 들어간다는 것이다.&lt;/p>
+&lt;p>문제는 이것도 &lt;code>240&lt;/code> &lt;code>(240x5=1200=20분)&lt;/code>까지 얘기이고 이 이후부터는 &lt;code>(입력된 숫자 - 240)*30분&lt;/code>후에 절전모드에 들어가게 된다. &lt;!-- raw HTML omitted -->요컨데 &lt;code>241&lt;/code>을 입력하면 30분후 &lt;code>242&lt;/code>를 입력하면 1시간뒤에 절전모드에 절전모드에 들어간다는 것이다.&lt;/p>
+&lt;p>근데 이것도 &lt;code>251&lt;/code> &lt;code>(251 = 5시간 30분)&lt;/code>까지의 얘기고&lt;/p>
+&lt;p>252는 21분
+253은 하드디스크 제조사에서 권장하는 시간 (vendor-specific)
+255는 21분 15초를 의미한다.&lt;/p>
+&lt;p>(254는 예비용으로 남겨둠)&lt;/p>
+&lt;h4 id="덤">덤&lt;/h4>
+&lt;p>hdparm이란 프로그램은 이름에서 예상되듯이 하드디스크의 각종 환경설정(parameter)값을 설정하는 프로그램이다.. 즉 여기서는 대기시간 말고도 여러가지 설정을 통해 하드디스크의 상태를 조절할수 있다.&lt;/p>
+&lt;p>예를들면&lt;/p>
+&lt;p>&lt;code>sudo hdparm -I /dev/sda&lt;/code>를 통해 이 하드디스크가 사용할수있는 기능과 그외 하드디스크에 관련된 정보를 볼수있고&lt;/p>
+&lt;p>&lt;code>sudo hdparm -tT /dev/sda&lt;/code>를 통해 하드디스크 그냥 읽기속도와 캐쉬를 이용한 읽기 속도를 비교해볼수도 있고&lt;/p>
+&lt;pre>&lt;code>/dev/sda:
+Timing cached reads: 1340 MB in 2.00 seconds = 670.39 MB/sec
+Timing buffered disk reads: 48 MB in 3.13 seconds = 15.35 MB/sec
+2009년 생산된 2.5인치 320기가짜리 하드디스크의 읽기속도는 15.35 MB/sec....ㅠㅠ
+&lt;/code>&lt;/pre>
+&lt;p>&lt;code>sudo hdparm -M 128 /dev/sda&lt;/code>를 통해 하드디스크의 성능을 희생해 더 조용하게 만든다던가&lt;/p>
+&lt;p>&lt;code>sudo hdparm -M 254 /dev/sda&lt;/code>를 통해 하드디스크의 성능을 최대로 뽑아냄과 동시에 엄청난 소음에 시달릴수도 있고&lt;/p>
+&lt;p>&lt;code>sudo hdparm -f /dev/sda&lt;/code>나 &lt;code>sudo hdparm -F /dev/sda&lt;/code>를 통해 읽기버퍼(전자)나 쓰기버퍼(후자)를 지워버릴수도 있다.&lt;/p>
+&lt;p>여러가지를 설정할수 있고 설정방법도 설정할려는 종류에 따라 모두 다르기때문에 자세한건 구글링 해보길 추천하며 글을 마친다.&lt;/p></description></item><item><title>원리부터 파악하는 OpneCV</title><link>https://iwanhae.github.io/p/introduction-to-opencv/</link><pubDate>Sat, 03 Oct 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introduction-to-opencv/</guid><description>&lt;img src="https://iwanhae.github.io/p/introduction-to-opencv/OpenCV_Logo_with_text.png" alt="Featured image of post 원리부터 파악하는 OpneCV" />&lt;h3 id="서론">서론&lt;/h3>
+&lt;p>OpenCV에 대해 포스팅되는 글들에대해 개인적으로 분류를 해보자면 크게 두가지 부류가 있다.
+하나는 &amp;ldquo;&lt;strong>나도 이게 어떻게 되는지는 모르지만 일단 되는류&lt;/strong>&amp;rdquo; 고 나머지 하나는 &amp;ldquo;&lt;strong>난 이미 너무 자세히 알고있어서 기초에대해 포스팅할 마음이 안생기는류&lt;/strong>&amp;ldquo;이다.&lt;/p>
+&lt;p>이것이 진실로 그러하든 그러하지않던 초보자에게 한글로된 문서만 보고 OpenCV입문이란 힘든다는것은 아마 대부분의 사람들이 공감할것이라 믿는다.&lt;/p>
+&lt;p>그래서 비교적 최신버전(3.0)에 기초하여 OpenCV가 사용하는 기본적인 함수부터 개발자가 이러한 함수를 만든 의도까지 살려서 &lt;strong>C++&lt;/strong> 혹은 &lt;strong>객체지향언어의 본질&lt;/strong>을 깨달은 사람을 대상으로 &lt;strong>&amp;ldquo;이정도 이해했으면 나머지는 알아서 할수있겠지!&amp;quot;&lt;/strong> 정도까지 글을 적어보려고 한다.&lt;/p>
+&lt;p>이 글은 시간이 날때마다 업데이트되며 이 블로그에서 OpenCV에대한 튜토리얼은 이 글 하나로 끝낼 생각이다.&lt;/p>
+&lt;p>또한 어느정도 주관이 들어가고 본인도 완벽히 이해하지 못하는 내용에대해서는 추측으로 글을 쓸수도 있기에 틀린내용이 있으면 댓글로 남겨주길 바란다.&lt;/p>
+&lt;p>설치에 대한 글은 따로 적지 않겠다. 윈도우 환경이라면 개인적으로 &lt;a class="link" href="http://webnautes.tistory.com/673" target="_blank" rel="noopener"
+>이 글&lt;/a>을 추천한다.&lt;/p>
+&lt;h3 id="소개">소개&lt;/h3>
+&lt;p>OpenCV는 인텔의 후원을 받으며 다음과 같은 목표를 가지고 있다.&lt;/p>
+&lt;blockquote>
+&lt;p>Advance vision research by providing not only open but also optimized code for basic vision infrastructure. No more reinventing the wheel.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>Disseminate vision knowledge by providing a common infrastructure that developers could build on, so that code would be more readily readable and transferable.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>Advance vision-based commercial applications by making portable, performance-optimized code available for free—with a license that did not require to be open or free themselves.&lt;/p>
+&lt;/blockquote>
+&lt;p>영어 울렁증인 분들을 위해 번역해 보자면&lt;/p>
+&lt;blockquote>
+&lt;p>오픈되있고 기초적인 영상처리에대한 최적화된 코드를 제공해 쓸데없는 시간낭비를 줄임으로서 진보된 영상처리 연구일것.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>개발자들이 쓸수있고 일반화되서 다른 개발자들이 이해할수 있고 변형가능하게 함으로서 영상처리에관한 지식을 퍼뜨릴것.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>대충 누구나 쓸수있고 코드를 꼭 공개하지 않아도 되게할것 (라이센스 관련 이야기 입니다.)&lt;/p>
+&lt;/blockquote>
+&lt;p>이것이 OpenCV의 기본 모토이며 실제로 잘 지키고 있으며 OpenCV자체 소개글에 의하면 2500개가 넘는 영상처리 관련 알고리즘이 최적화되서 포함되 있다고 한다.&lt;/p>
+&lt;p>즉, 요약하자면 우리는 복잡한 영상처리 알고리즘들을 완벽히 구현해낼 필요없이 OpenCV에서 제공하는걸 가져다 쓰면 되고, 또 이것들은 세계에 존재하는 우리만큼 (혹은 우리보다) 똑똑한 사람들이 &amp;ldquo;이것&amp;quot;에만 집중해서 만들어져 엄청난 최적화와 뛰어난 메모리관리가 가능한 라이브러리들의 집합체 라는것이다.&lt;/p>
+&lt;p>참고로 말하자면 상황에따라 개인이 집적 코딩하는게 더 효율적인 순간도 있겠지만 어지간해서는 알고리즘에대한 기초적인 이해만 가지고 OpenCV를 사용해 코딩하는게 생산성도 높고 결과물도 더 빠르다.&lt;/p>
+&lt;h3 id="mat--기초적인-이미지-저장소">Mat -기초적인 이미지 저장소&lt;/h3>
+&lt;ol>
+&lt;li>
+&lt;p>기초
+OpenCV자체가 영상처리에 관해 다루는 라이브러리인 만큼 &amp;ldquo;영상&amp;rdquo;, 즉 &amp;ldquo;이미지&amp;quot;에 대한 데이터가 저장될 장소가 일단 필요하다. OpenCV에서는 이 저장소를 &lt;code>Mat&lt;/code>이라 한다. (Matrix의 앞글자만 따온것이다)&lt;em>(실제 Mat은 이미지 저장소로도 쓰이지만 행렬식으로써의 사용도 가능하다. 추후언급)&lt;/em>&lt;/p>
+&lt;pre>&lt;code> 구버전을 기준으로 OpenCV를 접하신 분들은 아마 `IplImage`의 존재를 아시는 분이 있을것이다. 둘다 이미지를 저장하고 관리하는건 같으나 다른점이 있다면 `IplImage`는 수동으로 메모리 배치와 해체를 해줌으로서 메모리 관리를 해줘야 한다면 `Mat`은 하나의 객체, 즉 `Class`로서 자체적으로 메모리관리가 가능하다는 것이다.
+물론 `IplImage`의 존재가 사라진것은 아니며 그대로 쓸수있긴 하지만 OpenCV 개발자쪽에서도 이건 권장하지 않으며 프로젝트가 방대해짐에따라 메모리관리의 지옥에 빠지기 싫다면 `Mat`을 사용하도록 하자.
+&lt;/code>&lt;/pre>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;code>Mat&lt;/code>은 이미지를 저장하는 하나의 &lt;code>class&lt;/code>이며 이것은 크게 &lt;code>헤더&lt;/code>와 &lt;code>데이터 포인터&lt;/code>로 구성되어 있다.&lt;/p>
+&lt;p>&lt;code>헤더&lt;/code>는 자기 자신에 저장되있는 이미지에 대한 정보를 담는 곳이다. 예를들면 &amp;ldquo;이미지 크기&amp;rdquo;, &amp;ldquo;이미지 포맷&amp;quot;같은것들 말이다. 그리고 &lt;code>데이터 포인터&lt;/code>는 &lt;strong>이미지 하나하나의 픽셀&lt;/strong>이 담겨있는 &lt;strong>메모리 주소&lt;/strong>에대한 정보를 가지고 있는 곳이다.&lt;/p>
+&lt;p>이 두가지 부류의 정보가 담겨있는 &lt;code>Mat&lt;/code>은 다음과 같이 사용가능하다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">Mat&lt;/span> &lt;span class="n">A&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">C&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// Mat클래스 A와 C를 선언
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">A&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">imread&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;a.jpg&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IMREAD_COLOR&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// imread함수로 이미지&amp;#34;a.jpg&amp;#34;를 불러옴
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">Mat&lt;/span> &lt;span class="nf">B&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// B를 선언하고 A를 복사해옴
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="n">C&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">A&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// C에 A를 대입함.
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>근데 여기서 한가지 주의해야할 점이 있다.
+일단 &lt;code>imread&lt;/code>함수를 통해 &lt;code>A&lt;/code>에 &amp;ldquo;헤더&amp;quot;와 &amp;ldquo;데이터 포인터&amp;quot;가 저장된것은 좋으나 &lt;code>B&lt;/code>가 A로부터 정보를 복사해갈때 이역시 &amp;ldquo;헤더&amp;quot;와 &amp;ldquo;데이터 포인터&amp;quot;만 복사가 되지 &amp;ldquo;이미지 데이터&amp;quot;그 자체는 복사가 안된다. 이는 &lt;code>C&lt;/code>역시도 마찬가지 인데 이 일로 인해 생길수 있는 현상은 **&lt;code>C&lt;/code>의 이미지 데이터를 이진화 했는데 &lt;code>A&lt;/code>의 데이터도 이진화 되버리고 &lt;code>B&lt;/code>역시 같아졌다!**와 같은것을 초래할수 있다.&lt;/p>
+&lt;p>이를 방지하기 위해&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">C&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">A&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">clone&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">C&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">copyTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">A&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>와 같은식으로 &lt;strong>데이터를 통째로 복사&lt;/strong>해오면 &lt;code>C&lt;/code>가 변한다 해서 &lt;code>A&lt;/code>가 변하지 않고 그 반대도 마찬가지느 참고하도록 하자.&lt;/p>
+&lt;ol start="2">
+&lt;li>이미지 저장방법&lt;/li>
+&lt;/ol>
+&lt;p>&lt;code>Mat&lt;/code>은 위에서 말했다싶이 &lt;strong>Matrix&lt;/strong>에서 따온 글자임으로 그 저장방법도 행렬처럼 저장이 된다.
+&lt;img src="./b6df115410caafea291ceb011f19cc4a19ae6c2c.png" alt="" />&lt;/p>
+&lt;p>위 사진은 &lt;code>BGR&lt;/code>*(RGB에서 순서만 바뀜)*형식의 이미지가 메모리상에 저장되는 방법이다. 보다싶이 한 픽셀에 **&amp;ldquo;파랑&amp;rdquo;,&amp;ldquo;초록&amp;rdquo;,빨강&amp;rdquo;**이 순서대로 저장되 있다.&lt;/p>
+&lt;p>이건 메모리 주소상으로도 마찬가지이며 만약 어떤 포인터 &lt;code>ptr&lt;/code>이 &lt;strong>(x=12,y=15) 픽셀의 파란색&lt;/strong>을 가리키고 있다면 &lt;code>ptr++&lt;/code>를 해주면 그 다음위치인 &lt;strong>(x=12,y=15) 픽셀의 초록색&lt;/strong>을 가리키게 되는 구조이다.&lt;/p>
+&lt;p>OpenCV에서는 이런 **&amp;ldquo;파랑&amp;rdquo;,&amp;ldquo;초록&amp;rdquo;,빨강&amp;rdquo;**같은걸 &lt;strong>채널&lt;/strong>이라 부른다. 이경우 채널수는 3개가 되며 이 형식은 이미지의 포맷별로 다르며 임의로 자신이 구성할수도 있다.&lt;/p>
+&lt;p>참고로 &lt;code>OpenCV&lt;/code>가 지원하는 이미지 포맷은 크게 4가지 정도가 있다.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>RGB : 우리가 잘 알고있고 흔히 쓰는방법이다. 각 픽셀별로 &lt;code>빨강&lt;/code>,&lt;code>초록&lt;/code>,&lt;code>파랑&lt;/code>을 0~255사이의 숫자로 색을 표현하는 것이다. 주의해야할 점은 OpenCV는 RGB대신 BGR(순서만 바꿈)형식으로 데이터를 저장하니 참고해 두자.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a class="link" href="https://ko.wikipedia.org/wiki/HSV_%EC%83%89_%EA%B3%B5%EA%B0%84" target="_blank" rel="noopener"
+>HSV, HLS&lt;/a> : 둘다 같은것으로 색상&lt;strong>Hue&lt;/strong>, 채도&lt;strong>Saturation&lt;/strong>, 휘도(밝기)**Value(luminance)**로 색을 표현한다. 밝기에따라 색이 달라지는 RGB와 다르게 마지막 성질만 제외하면 비교적 일정한 데이터를 얻을수 있어서 영상처리분야에 애용되는 포맷이다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>YCrCb : jpg에서 일반적으로 쓰이는 포맷이다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>CIE L&lt;em>a&lt;/em>b* : &lt;a class="link" href="https://ko.wikipedia.org/wiki/Lab_%EC%83%89_%EA%B3%B5%EA%B0%84" target="_blank" rel="noopener"
+>위키피디아&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>초기화
+&lt;code>Mat&lt;/code>에 이미지를 넣지 않고도 그냥 초기화 하는법도 있다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">Mat&lt;/span> &lt;span class="nf">M&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">CV_8UC3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="mi">255&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;/ol>
+&lt;p>순서대로 **&amp;ldquo;행&amp;rdquo;, &amp;ldquo;열&amp;rdquo;, &amp;ldquo;초기화 타입&amp;rdquo;, &amp;ldquo;초기화 내용&amp;rdquo;**으로 구성되며 초기화 타입의 경우 **CV_(하나의 데이터당 비트수)(Signed 인지 Unsigned 인지)C(채널수)**와 같은 형식을 가진다. 위 예제의경우 **데이터당 8비트의 저장공간을 가지고, Unsigned 형태로, 3가지 채널(RGB)를 가진다**라는 의미이다.&lt;/p>
+&lt;p>이걸&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">cout&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="s">&amp;#34;M = &amp;#34;&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="n">endl&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="s">&amp;#34; &amp;#34;&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="n">M&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="n">endl&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="n">endl&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>이렇게 출력해주면&lt;/p>
+&lt;p>&lt;img src="./MatBasicContainerOut1.png" alt="" />&lt;/p>
+&lt;p>이런 형식의 데이터를 가지게 된다.&lt;/p>
+&lt;h3 id="실습">실습&lt;/h3>
+&lt;p>다음은 웹캠동영상을 불러와 화면에 띄우는 코드이다. 쉬어가는겸 한번 해보자.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;opencv2/core/core.hpp&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;opencv2/highgui/highgui.hpp&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;iostream&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="k">using&lt;/span> &lt;span class="k">namespace&lt;/span> &lt;span class="n">cv&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">using&lt;/span> &lt;span class="k">namespace&lt;/span> &lt;span class="n">std&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">argc&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">char&lt;/span>&lt;span class="o">**&lt;/span> &lt;span class="n">argv&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">VideoCapture&lt;/span> &lt;span class="n">vc&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//0번웹캠 초기화
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="o">!&lt;/span>&lt;span class="n">vc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">isOpened&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// 연결실패
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="n">Mat&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//img선언
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="n">vc&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//0번웹캠에서 받은 데이터를 img에 대입
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="c1">//데이터 자체를 복사하는지는 모름, 아시는분은 알려주세요.
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">img&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">empty&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//받은거 없으면 종료
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">imshow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;cam&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//화면에 띄우기
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">waitKey&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">10&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">27&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//ESC키 눌리면 종료
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;span class="n">destroyAllWindows&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="필터-적용해보기">필터 적용해보기&lt;/h3>
+&lt;p>앞으로 OpenCV로 영상처리를 하게되면 필터적용은 거의 필수적으로 하게될것이다. 지금은 OpenCV 공식 예제중 하나인 **&amp;ldquo;Sharpen&amp;rdquo;**에 대해 시도해 보자.&lt;/p>
+&lt;p>일단 **&amp;ldquo;Sharpen&amp;rdquo;**은 다음과 같은 공식을 적용하게된다.&lt;/p>
+&lt;p>&lt;img src="./7c2c71b792e6560be979d359e8f3f3b34c7938ff.png" alt="" />&lt;/p>
+&lt;p>수식 울렁증인 분들을 위해 간단한 해석을 해보자면 위의식은&lt;/p>
+&lt;pre>&lt;code>좌표평면에서 (i,j)의 픽셀에 대해 (각 화소별로) 자신의 5배에다가 사방에 있는 픽셀의 더한값을 뺀다.
+&lt;/code>&lt;/pre>
+&lt;p>를 의미한다. (아래 그림에서 좌표가 표시된것만 연산에 참여한다고 보면 된다.)&lt;/p>
+&lt;p>&lt;img src="./mat.png" alt="matrix" />&lt;/p>
+&lt;p>그리고 밑의식은 그걸 위 그림과 같은 배치로 행렬로 나타낸 것이다.&lt;/p>
+&lt;p>&lt;strong>i,j&lt;/strong>인 자신을 5배 한뒤 그 주변의 것들을 &lt;strong>-1&lt;/strong>배해서 더해주는 것이다. (한마디로 위, 아래 두식모두 같은 의미를 가진다.)&lt;/p>
+&lt;p>이를 우리는 &lt;strong>Kernel&lt;/strong> &lt;em>(핵심, 알맹이)&lt;/em> 라고 부른다.&lt;/p>
+&lt;p>이 식을 &lt;strong>두가지&lt;/strong>방법으로 적용시켜 보겠다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;opencv2/core/core.hpp&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;opencv2/highgui/highgui.hpp&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;opencv2/imgproc/imgproc.hpp&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;iostream&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="k">using&lt;/span> &lt;span class="k">namespace&lt;/span> &lt;span class="n">cv&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">using&lt;/span> &lt;span class="k">namespace&lt;/span> &lt;span class="n">std&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">Sharpen&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">const&lt;/span> &lt;span class="n">Mat&lt;/span>&lt;span class="o">&amp;amp;&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Mat&lt;/span>&lt;span class="o">&amp;amp;&lt;/span> &lt;span class="n">Result&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">CV_Assert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">depth&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">CV_8U&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">create&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">size&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">type&lt;/span>&lt;span class="p">());&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">nChannels&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">channels&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">j&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">j&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rows&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">previous&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">current&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">next&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">output&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">nChannels&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">nChannels&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cols&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="o">*&lt;/span>&lt;span class="n">output&lt;/span>&lt;span class="o">++&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">saturate_cast&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="n">current&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;span class="o">-&lt;/span> &lt;span class="n">current&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">nChannels&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">current&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="n">nChannels&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">previous&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="n">next&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">row&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">row&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rows&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">col&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">col&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cols&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">argc&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">char&lt;/span>&lt;span class="o">**&lt;/span> &lt;span class="n">argv&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">VideoCapture&lt;/span> &lt;span class="n">vc&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="o">!&lt;/span>&lt;span class="n">vc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">isOpened&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// 연결실패
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="n">Mat&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">Mat&lt;/span> &lt;span class="n">output&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">Mat&lt;/span> &lt;span class="n">kern&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Mat_&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">char&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">3&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="n">vc&lt;/span> &lt;span class="o">&amp;gt;&amp;gt;&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">img&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">empty&lt;/span>&lt;span class="p">())&lt;/span> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">imshow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;cam&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">waitKey&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">10&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="mi">27&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//ESC
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="n">Sharpen&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">img&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">output&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//위쪽의 식을 적용시킨 코드
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">imshow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;output&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">output&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">filter2D&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">img&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">output&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">img&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">depth&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="n">kern&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//아래쪽 식을 적용시킨 코드
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">imshow&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;output2&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">output&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">destroyAllWindows&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>일단 위쪽식을 적용한 **Sharpen()**함수에 대해 설명해 보겠다.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">CV_Assert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">depth&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="n">CV_8U&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>이 함수는 &lt;code>myImage&lt;/code>가 CV_8U, 즉 8비트의 Unsigned 형태인지를 보고, 아니라면 &lt;code>ERROR&lt;/code>를 &lt;code>Throw&lt;/code>한다. 한마디로 계산할려는 &lt;code>Mat&lt;/code>이 제대로 됬는지를 확인하는 함수이다.&lt;code>Resaut&lt;/code>를 &lt;code>myImage&lt;/code>와 같은 크기와 저장방식을 가지게 초기화 해주고, &lt;code>nChannels&lt;/code>에는 채널의 수가 들어간다. 이경우 &lt;code>BGR&lt;/code>형태의 이미지이기 때문에 &lt;code>nChannels&lt;/code>에는 &lt;code>3&lt;/code>이 입력된다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">j&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">j&lt;/span> &lt;span class="o">&amp;lt;&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rows&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="o">++&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>1행부터 마지막행까지 반복&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">previous&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">current&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">const&lt;/span> &lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">next&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">myImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">uchar&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">output&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">uchar&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>매 반복이 시작될때마다&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>previous 는 자신의 윗(이전)행&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>current 는 자신의 행&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>previous 는 자신의 아랫(다음)행&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;pre>&lt;code>을 배열로 불러오고
+&lt;/code>&lt;/pre>
+&lt;p>출력 &lt;code>Mat&lt;/code>에서 자신의 행의 첫번째 픽셀의 첫번째 채널을 (&lt;code>*output&lt;/code>) &lt;strong>Unsigned char&lt;/strong> 형태로 가르킨다.&lt;/p>
+&lt;ol start="6">
+&lt;li>
+&lt;p>&lt;code>output&lt;/code>이 가르키는 메모리 공간에 &lt;code>5 * current[i] - current[i - nChannels] - current[i + nChannels] - previous[i] - next[i])&lt;/code>을 대입한다.&lt;/p>
+&lt;p>이때 위 &lt;code>Mat&lt;/code>에서 메모리공간에 이미지가 저장되는 방법을 소개했을때 보여준것처럼 자신의 바로 다음공간에는 다른 채널의 데이터가 들어가 있으므로 &lt;strong>i - nChannels&lt;/strong>을 가르킴으로서 자신 채널의 다음 픽셀을 가르키게 하는것이다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>saturate_cast&amp;lt;&amp;gt;&lt;/code>는 일종의 보호장치로 만약 연산결과가 &lt;code>uchar&lt;/code>가 표시가능한 &lt;strong>0~255&lt;/strong>를 넘어갔을때 &lt;strong>0&lt;/strong>과 &lt;strong>255&lt;/strong>중 더 가까운 수를 리턴해주는 함수이다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>그 후 &lt;code>output&lt;/code>은 자신 다음의 저장공간을 가리킨다.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">row&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">row&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">rows&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">col&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">col&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Result&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">cols&lt;/span> &lt;span class="o">-&lt;/span> &lt;span class="mi">1&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">setTo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Scalar&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>계산식의 특성상 맨 끝부분은 연산을 할수 없으므로 &lt;strong>0&lt;/strong>을 대입해준다.&lt;/p>
+&lt;p>뭔가 그럴듯해보이는 함수지만 사실은 별거없는 함수다. 이런 간단한 연산을 할때 매번 이렇게 길게쓰는건 뭔가 시간낭비라고 OpenCV개발자들이 느꼈는지 &lt;strong>kernel&lt;/strong>의 존재를 만들어내서&lt;/p>
+&lt;pre>&lt;code>filter2D(img, output, img.depth(), kern);
+&lt;/code>&lt;/pre>
+&lt;p>한방으로 계산을 끝내게 해주었다.
+&lt;code>filter2D&lt;/code>에 대한 자세한 정의는 &lt;a class="link" href="http://docs.opencv.org/modules/imgproc/doc/filtering.html#filter2d" target="_blank" rel="noopener"
+>여기&lt;/a>를 참고하고 지금은 간단하게 설명하자면&lt;/p>
+&lt;p>img랑 output은 예상한것처럼 입력물과 출력물, img.depth()는 img의 저장형식 (CV_8U 같은거)를 리턴해준다, kern은 위에서 정의했다싶이&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="n">Mat&lt;/span> &lt;span class="n">kern&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Mat_&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="kt">char&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">3&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">&amp;lt;&amp;lt;&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;span class="mi">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="o">-&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>의 형태를 가지며 아래식의 행렬과 똑같이 생겼다.&lt;/p>
+&lt;p>여기서 주의해야할 사실은 여러분은 **Sharpen()**보단 &lt;strong>filter2D&lt;/strong>를 사용해야된다는 것이다.&lt;/p>
+&lt;p>이유는 두가지이다.&lt;/p>
+&lt;ol>
+&lt;li>이게 더 구현하기 쉽다.&lt;/li>
+&lt;li>이게 3배정도 빠르다.&lt;/li>
+&lt;/ol>
+&lt;p>참고로 이미 **Sharpen()**도 코드상 더이상 빨라질수가 없는데 실제로 더 빠른 이유는 &lt;strong>filter2D&lt;/strong>는 &lt;strong>어셈블리 단계에서 최적화&lt;/strong>도 되있을뿐아니라 &lt;strong>SIMD&lt;/strong>와 같은 CPU의 특수기능들을 적극적으로 활용해 한번에 한 픽섹을 연산하는게 아니라, 한번에 여러픽셀을 동시에 연산하기 때문이다. **Sharpen()**은 그냥 참고용으로만 봐두고 실제 사용할때는 &lt;strong>filter2D&lt;/strong>를 적극적으로 활용하도록 하자.&lt;/p>
+&lt;pre>&lt;code>**잠깐 쉬어가기**
+cvtColor(img, img, CV_BGR2YCrCb);
+inRange(img, Scalar(0, 133, 77), Scalar(255, 173, 127), output);
+imshow(&amp;quot;output&amp;quot;, output);
+이 코드를 실행해보자. 사람 피부색이 검출된다. 원리는 다음과 같다. BGR성분의 이미지를 색차와 휘도로 색공간을 나타내는 YCrCb로 변환한다음 여기서 (0,133,77)~(255,173,127)사이의 색만 골라서 출력하는 코드이다. 사람 피부색은 YCrCb로 표현했을때 특정 공간에 몰려있기에 가능한 것이다. RGB공간에서도 같은일을 할수있으나 YCrCb보단 정확도가 떨어진다. 단, 이 방법은 배경의 색차이때문에 나타나는 오류가 많기에 일반적인 상황에선 사용하지 않고 특수한 상황(공장에서 이미지기반 상품인식같은)에서 자주 쓰인다.
+&lt;/code>&lt;/pre>
+&lt;p>&lt;img src="./my.png" alt="" />
+*보다싶이 이 방법으로 **&amp;ldquo;피부만&amp;rdquo;*&lt;em>인식하기는 힘들다.&lt;/em>&lt;/p>
+&lt;h3 id="opencv에-있는-알고리즘-사용해보기">OpenCV에 있는 알고리즘 사용해보기&lt;/h3>
+&lt;p>작성중&lt;/p>
+&lt;p>-&amp;gt; 작성예정없음&lt;/p></description></item><item><title>공기저항을 고려한 자유낙하</title><link>https://iwanhae.github.io/p/free-fall-with-air-resistance/</link><pubDate>Tue, 22 Sep 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/free-fall-with-air-resistance/</guid><description>&lt;img src="https://iwanhae.github.io/p/free-fall-with-air-resistance/clipart807887.png" alt="Featured image of post 공기저항을 고려한 자유낙하" />&lt;pre>&lt;code>k는 현재의 공기저항 상수
 s는 거리
 v는 속도
 a는 가속도
