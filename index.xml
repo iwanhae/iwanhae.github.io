@@ -107,7 +107,1267 @@ Example: quirks=0419:aaf5:rl,0421:0433:rc
 &lt;p>Odroid N2는 정말 성능도 끝내주고, 소비전력도 엄청 적고, 생긴것도 나름 괜찮고, 소음도 없고 하드웨어적으로는 정말 끝내주는 놈이다.&lt;/p>
 &lt;p>하지만 나온지 얼마 안된놈이다. 안되는게 너무 많다. 심지어 Docker 돌리는데도 가끔 알수없는 에러가 난다&amp;hellip;&amp;hellip;&amp;hellip; 이래서 서버는 안정성이 검증된놈을 쓰는구나&amp;hellip;. 라는걸 절실하게 깨달았다&amp;hellip;&amp;hellip;&lt;/p>
 &lt;p>생각해보면 XU3가 막 나왔을 때에도 그랬던거 같다. 근데 요즘은 안되는게 없는거 보면 (ARM에서 KVM돌리는건 처음본다.) 이놈도 괜찮아질꺼 같기는 한데 문제는 지금 당장이 좀 불안불안 하다는 것이다.&lt;/p>
-&lt;p>일단 지금은 어떻게든 안정적인 세팅을 완료했으니 당분간 방치해둬야겠다.&lt;/p></description></item><item><title>리눅스, 하드디스크를 절전모드로 두기 (hdparm)</title><link>https://iwanhae.github.io/p/introducing-hdparm/</link><pubDate>Sat, 12 Dec 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introducing-hdparm/</guid><description>&lt;img src="https://iwanhae.github.io/p/introducing-hdparm/harddrive-icon-18.jpg" alt="Featured image of post 리눅스, 하드디스크를 절전모드로 두기 (hdparm)" />&lt;h1 id="서론">서론&lt;/h1>
+&lt;p>일단 지금은 어떻게든 안정적인 세팅을 완료했으니 당분간 방치해둬야겠다.&lt;/p></description></item><item><title>Netplan Bridge 구성기</title><link>https://iwanhae.github.io/p/config-netplan-bridge/</link><pubDate>Tue, 28 May 2019 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/config-netplan-bridge/</guid><description>&lt;img src="https://iwanhae.github.io/p/config-netplan-bridge/netplan.png" alt="Featured image of post Netplan Bridge 구성기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>우분투가 &lt;code>netplan&lt;/code>을 사용한지는 꽤 된걸로 알고있다. &lt;code>17.04&lt;/code> 부터 였던가? 아마 그쯤이었던걸로 기억한다. 그냥 알던데로 ifup, ifdown 명령어를 쓰거나 /etc/network에 들어가서 네트워크 설정을 분명 수정했는데 제대로 반영이 안되서 멘붕왔던게 지금도 기억난다. ㅋㅋㅋ&amp;hellip;..ㅠ&lt;/p>
+&lt;p>뭐 그건 그때고, &lt;code>netplan&lt;/code>을 한번 알고나니깐 이렇게 직관적이고 간편한것도 없다는게 지금생각이다. 덕분에 &lt;code>CentOS&lt;/code>쪽을 사용도 못해보겠다는게 함정이라면 함정이지만 말이다.&lt;/p>
+&lt;p>그런 느낌으로 지내오다가 요즘 VM 가지고 놀다가 자체 NAT으로 돌리자니 불편한점이 너무 많고 어차피 &lt;code>iptime&lt;/code> 공유기 안쪽에서 노는건데 ip관리는 전부 공유기한테 시키고 &lt;code>Host&lt;/code>는 가상머신만 구동시키라는 느낌으로 브릿지 구성하면서 뻘짓들 기록으로좀 남겨본다.&lt;/p>
+&lt;h2 id="netplan-이란">Netplan 이란?&lt;/h2>
+&lt;p>레드헷진영은 아직인거 같지면 우분투진영은 &lt;code>Netplan&lt;/code>으로 옮겨왔다. 로우레벨 영역에서 돌아가는건 똑같지만 &lt;code>Netplan&lt;/code>은 &lt;code>yaml&lt;/code>형식으로 네트워크 구성을 명시해두면 알아서 설정파일을 만들어서 &lt;code>NetworkManager&lt;/code>(좀더 하드웨어쪽) 이랑 &lt;code>Systemd-Networkd&lt;/code>(좀더 소프트웨어쪽)의 설정을 한꺼번에 처리해주는 놈이다.&lt;/p>
+&lt;p>&lt;img src="./netplan_design_overview.svg" alt="" />&lt;/p>
+&lt;p>이거 하나로 브릿지 구성, 트래픽조절, 와이파이 연결, ip 설정 변경등 다양한 작업을 할 수 있어 사람을 예전에 여기저기 폴더 돌아다니면서 네트워크 설정하던 시절로 돌아가지 못하게 만드는 흉악한 녀석이다.&lt;/p>
+&lt;h2 id="목표">목표&lt;/h2>
+&lt;p>다음과 같은 상황을 가정한다.&lt;/p>
+&lt;p>Host의 실제 물리적으로 존재하는 NIC는 &lt;code>eth0&lt;/code> 하나만 존재한다.&lt;/p>
+&lt;p>VM의 NIC는 &lt;code>vm0&lt;/code>, &lt;code>vm1&lt;/code>, &lt;code>vm2&lt;/code> 이런느낌으로 아주 많이 존재한다.&lt;/p>
+&lt;p>목표는 브릿지를 하나 만들어서 &lt;code>Host&lt;/code>머신과 모든 &lt;code>VM&lt;/code>에게 &lt;code>Public IP&lt;/code>를 부여하는 것이다.&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>간단하다. 일반적인 &lt;code>netplan&lt;/code>이 설치된 환경이면
+&lt;code>/etc/netplan&lt;/code> 폴더 속에 &lt;code>eth0&lt;/code> interface가 정의된 설정파일이 있을것이다.
+그 파일을 열어보면&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="nt">network&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">ethernets&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">eth0&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">dhcp4&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">version&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">2&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>위와같이 정의가 되있을테고 그 뒤에 Bridge에 대한 정의를 해주면 된다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="nt">network&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">ethernets&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">eth0&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">dhcp4&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">bridges&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">br0&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">dhcp4&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">interfaces&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;eth0&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w">
+&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nt">version&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">2&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
+&lt;p>상식적으로 &lt;code>eth0&lt;/code> 부분에 dhcp4 옵션은 꺼줘야 되지 않나? 생각하지만 호스트가 &lt;code>br0&lt;/code>로 정의된 브릿지를 통해 네트워크를 실행하기 때문에 저 옵션은 무시되는거 같다.&lt;/p>
+&lt;/blockquote>
+&lt;p>이제 &lt;code>netplan apply&lt;/code> 해주면 설정이 적용된다.&lt;/p>
+&lt;p>이렇게 할 경우 Host 는 br0라는 NIC를 통해 인터넷에 접속되며 (MAC주소도 바뀌니깐 dhcp 설정 주의하자) 나머지 가상머신들은 네트워크 설정할때 &lt;code>br0&lt;/code> 랑 접속만 시켜두면 외부랑 통신이 가능하다.&lt;/p>
+&lt;p>VLAN을 특별히 설정해두지 않으면 가상머신간에 소통을 할때 쓸때없이 트래픽이 &lt;code>eth0&lt;/code>를 통해 &lt;code>Host&lt;/code>외부까지 갔다가 다시 돌아오지 않을까? 라는 염려를 조금 하긴 했으나, 실제 실험결과 내부간 소통은 트래픽이 내부에서만 처리되는걸로 확인했다. 이부분은 조금 공부가 필요.&lt;/p>
+&lt;h2 id="단점">단점&lt;/h2>
+&lt;p>이게 실제 물리 디바이스를가지고 하면 잘된다. 안드로이드 스마트폰부터 라즈베리파이, x86서버 등등은 정말 잘된다.&lt;/p>
+&lt;p>근데 가상 브릿지가 물려있는 가상머신 속에서 또 브릿지를 하나 만들면 안된다. 일단 dhcp가 안되서 ip주소 할당이 안되고, 수동으로 ip할당해도 외부랑 통신은 커녕 Host와 VM 간의 통신도 안된다. KVM과 Hyper-V 두 환경 모두에서 확인한 결과고 KVM의 경우 NIC로 Virtio를 사용했다.&lt;/p>
+&lt;p>아마 가상 브릿지 두개이상 물리면 뭔가 문제가 생기는 모양이지만 필자의 경우 이 상황이 꼭 필요한건 아니므로 패스.&lt;/p>
+&lt;h2 id="단점2">단점2&lt;/h2>
+&lt;p>설정중에 당연하지만 네트워크가 끊긴다. SSH로 작업하는건 추천하지 않는다. 위와같이 가상머신 속 브릿지 구축처럼 알수없는 이유로 네트워크가 단절될수 있고, 이 상태에서 당황에서 리부팅하면 &lt;code>systemd-networkd-wait-online&lt;/code>가 네트워크 연결 안됬다고 부팅을 막아버린다&amp;hellip;&amp;hellip;;;;&lt;/p>
+&lt;p>근데 또 가끔 설정 완료하고 바로는 네트워크가 안되는데 재부팅하면 되는경우가 있어서 재부팅을 안해볼수도 없다는게 함정이다.&lt;/p>
+&lt;blockquote>
+&lt;p>systemctl disable systemd-networkd-wait-online
+systemctl mask systemd-networkd-wait-online&lt;/p>
+&lt;/blockquote>
+&lt;p>이 두가지는 꼭 실행하고 설정에 임하도록 하자.
+전자는 부팅시 자동로딩되지 않게, 후자는 dependency 관계인 놈들이 이 서비스를 호출하지 않도록 막는 명령어다.&lt;/p>
+&lt;h2 id="후기">후기&lt;/h2>
+&lt;p>네트워크는 짜증난다.&lt;/p>
+&lt;p>될꺼라 생각했는데 안될경우도 많고, 안될꺼 알지만 반쯤 자포자기로 해봤는데 갑자기 되는경우도 있다.&lt;/p>
+&lt;p>문제는 이렇게 어떻게든 한번만 성공하면, 영원히 방치다. 문제일어나기 전까지는 절대 안만지고, 문제가 일어나지도 않는다.
+&lt;del>(지금도 어떻게 Bridge에다 NAT 환경을 하나 붙여두긴 했는데 이건 진짜 어떻게 했는지도 모르겠다.)&lt;/del>&lt;/p>
+&lt;p>그러니 성공해도 왜 성공했는지 모르며, 경험이 쌓이지 않는것 같다는게 개인적인 감상이다.&lt;/p>
+&lt;p>그래서 작지만 성공한 케이스에 대해 이렇게 기록을 남겨보고자 한다.&lt;/p></description></item><item><title>원리부터 파악하는 Unity의 DOTS</title><link>https://iwanhae.github.io/p/introduction-of-unity-dots/</link><pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introduction-of-unity-dots/</guid><description>&lt;img src="https://iwanhae.github.io/p/introduction-of-unity-dots/unity.png" alt="Featured image of post 원리부터 파악하는 Unity의 DOTS" />&lt;h1 id="서론">서론&lt;/h1>
+&lt;p>필자는 원래 게임을 별로 즐겨하는 성격이 아니기에 Unity에 별 관심이 없었다.&lt;/p>
+&lt;p>데이터 시각화 수단으로써 잠깐 관심을 가졌던적이 있긴 하지만 그것도 잠시 훌륭한 Javascript 라이브러리들이 무식하게 커다란 데이터도 효율적으로, 구현하기 쉽게 시각화 수단을 제공하면서 이에대한 관심도 금방 사라졌다. (아무래도 Unity는 Restful한게 기본은 아니기에&amp;hellip;.)&lt;/p>
+&lt;p>그렇게 관심이 없어지면서 2018년까지 필자의 Unity에 대한 생각은&lt;/p>
+&lt;pre>&lt;code> 싱글스레드로 무식하게 물리연산해가면서 컴퓨터 리소스 우걱우걱 처먹고 틈만나면 램 처묵처묵하면서 버그 내뿜는 이상한 놈이지만 공짜에다 개발이 편해서 게임 개발자들에게 사랑받는 존재.
+&lt;/code>&lt;/pre>
+&lt;p>뭐 이정도 였다.&lt;/p>
+&lt;p>그러다 생각이 바뀐게 유튜브에서 추천영상으로 유니티 Keynote가 뜨길레 심심해서 봤더니만 여전히 램은 좀 처묵처묵하고 버그도 좀 있어보이지만 엄청난 스폰서를 뒤에두고 연산효율이 이전버전대비 비상식적으로 올라간 새로운 존재로 탈바꿈한걸 깨닫고나서 부터이다.&lt;/p>
+&lt;p>그렇게 DOTS라는 존재가 이걸 가능하게 했다는건 알았지만 솔직히 Unity 쓸일이 없기에 자세히 알아보진 않았었는데 이번에 &lt;code>Unite Seoul 2019&lt;/code>에 참석하면서 DOTS에 대해 설명을 듣는시간이 있었는데 설명을 듣고나니 뭔가 통쾌하게 이해가 되서 그 기쁨을 나누고자 이 글을 써본다.&lt;/p>
+&lt;p>&lt;img src="./---2019-05-21-225123.png" alt="&amp;amp;mdash;2019-05-21-225123" />&lt;/p>
+&lt;p>참고로 설명해주신분은 Unity 에서 Field Engineer 로 일하고 계신 이재호 님이시다.
+&lt;del>모든 Keynotes 중에서 가장 보람있었다고 생각하고 있다.&lt;/del>&lt;/p>
+&lt;h2 id="주의사항">주의사항&lt;/h2>
+&lt;ol>
+&lt;li>필자는 DOTS에 반했을뿐 유니티는 깔아본적도 없다. 그래서 주로 이론적인 부분만 파고들 생각이다.&lt;/li>
+&lt;li>2019년 5월 현재 DOTS는 아직 대부분의 기능이 BETA 상태이다. 아마 이 글은 경험상 2019년 이후에도 계속 남게 될텐데 지금 기준으로 DOTS 기술이 적용된건 Physics관련된것들이 베타상태일 뿐이다. Rendering 부분은 아직 공개된것이 없고, Job system, Entity 같은것들도 매일매일 새로운 기능이 추가 삭제 수정되고 있는 상황이라고 한다. 기본적인 내용은 크게 안바뀌겠지만 참고 바란다.&lt;/li>
+&lt;li>Unity의 DOTS는 수만개의 &lt;code>GameObject&lt;/code>가 난무하는 상황에서 매우 효과적인 놈이다. 읽으면서 이 상황을 상상하면서 읽는것이 도움이 될것이다. 단일 &lt;code>GameObject&lt;/code>상황에선 아마 더 성능이 떨어지겠지만 사실 게임에서 그런상황이 얼마나 있겠는가?&lt;/li>
+&lt;/ol>
+&lt;h1 id="unity-뭐가-문제였나">Unity 뭐가 문제였나?&lt;/h1>
+&lt;p>필자가 즐겨했던 Unity 게임중에는 &lt;code>Kerbal Space Program&lt;/code>이라는 게임이 있다. 사용자가 직접 로켓을 만들어 물리엔진을 이용해 현실에서 로켓날리는거랑 거의 똑같은 궤도역학을 통해 인공위성도 쏘고 수년걸려서 다른행성 갔다오기도 하는 매우 물리스러운 게임이었는데, 필자가 한창 즐겨했을때 이 게임은 Unity 4를 사용하고 있었고 베타버전이었긴 했지만 게임상 프로그램적인 문제가 아주 심각했었다.&lt;/p>
+&lt;p>그 중 가장 큰 문제는 &lt;strong>모든 물리연산이 싱글스레드로 돌아간다.&lt;/strong> 는 것이다.&lt;/p>
+&lt;p>아래 동영상을 보면 알다싶이 KSP에서는 플레이어가 만든 로켓이 각 부품별로 별도의 Object로 존재해 각 부품마다 물리연산이 행해져야하지만, 유니티 엔진 특성상 하나의 스레드가 각각의 Object에 내제된 물리엔진을 포함한 기타로직들을 하나씩 순회하면서 연산하다보니 부품이 200 ~ 300개만 넘어가도 Windows에서 응답없음을 때려버리면서 끌려면 작업관리자를 실행해야 하는 결과를 불러왔다.&lt;/p>
+&lt;p>&lt;code>DOTS&lt;/code>에서는 &lt;code>ECS&lt;/code>라는 데이터(Component) 관리 방식과 &lt;code>Job System&lt;/code>이란 함수지향적 디자인을 택한 연산방식을 통하여 개발자로 하여끔 가이드라인만 맞추어 코딩하면 최적화된 멀티 스레드 프로그래밍의 세계를 열어주었고 여기에 &lt;code>Burst Compiler&lt;/code>라는 그 어떤 코드적 추가작업없이 더 빠른 성능을 가져다주는 새로운 컴파일러를 추가해 위와 같이 CPU부하가 심한 작업의 경우 약 20배 가까운 퍼포먼스 향상을 가져와준다.
+&lt;del>(문제는 아직 이 게임에는 적용되지 않았다.)&lt;/del>&lt;/p>
+&lt;p>그럼 이제 DOTS에 대해 알아보자.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;h2 id="데이터-지향">데이터 지향&lt;/h2>
+&lt;p>필자가 어릴때는 컴퓨터 프로그래밍론 하면 두가지만 생각하면 됬다.&lt;/p>
+&lt;ol>
+&lt;li>절차지향&lt;/li>
+&lt;li>객체지향&lt;/li>
+&lt;/ol>
+&lt;p>참 편했던 세상이었지만 요즘은 좀 무섭다. 일단 &lt;code>함수지향(Functional Programing)&lt;/code>개념이 부활했다. 그리고 이에 뒤따라 &lt;code>함수반응형프로그래밍(FRP)&lt;/code>이 생겼다. 그리고 같은 비교군에 해당되는지는 미묘하지만 &lt;code>MVC&lt;/code>패턴이 생겼고 이에 뒤따라 &lt;code>MVVM&lt;/code>이니 &lt;code>MVP&lt;/code>같은 것들도 생겼다. 이런 무서운 세상에 하나가 추가됬으니 그게 바로 &lt;code>Data-Oriented Design(데이터지향 설계)&lt;/code>이다.&lt;/p>
+&lt;p>&lt;code>데이터 지향 설계&lt;/code>(이하 &lt;code>DOD&lt;/code>)은 다른놈들과는 다르게 프로그래머로 하여끔 더 편한 코딩환경을 제공하기위한 구조가 아닌 &lt;strong>컴퓨터로 하여끔 더 편한 연산환경을 제공하기 위한 구조&lt;/strong>이다. 좀더 구체적으로 들어가기 위해서는 CPU의 작동원리를 되새겨볼 필요가 있다.&lt;/p>
+&lt;p>컴퓨터는 일반적으로 보조기억장치, 주기억장치, 그리고 &lt;code>CPU&lt;/code>로 구성되어 있다. 일반적으로 보조기억장치는 &lt;code>SSD&lt;/code>를 말하고 &lt;del>(HDD가 뭐죠?)&lt;/del> 주 기억장치는 &lt;code>RAM&lt;/code>을 말한다. 그럼 여기서 한번쯤 해보는 초보적인 질문이 &amp;ldquo;어차피 &lt;code>SSD&lt;/code>에 데이터가 존재하는데 &lt;code>CPU&lt;/code>에서 직접 꺼내다 쓰지 뭐하러 &lt;code>RAM&lt;/code>에 옮겼다 쓰냐?&amp;rdquo; 라는 것이다. 답은 이미 모두가 알고있다. 반응속도 때문이다.&lt;/p>
+&lt;p>하지만 &lt;code>CPU&lt;/code>입장에서는 &lt;code>RAM&lt;/code>도 느리다. 그래서 만들어진게 &lt;code>L1&lt;/code> &lt;code>L2&lt;/code> 캐쉬이다. &lt;code>CPU&lt;/code>속에 존재해서 &lt;code>RAM&lt;/code>에서 꺼내온 정보를 초고속으로 연산장치에 넘기는 일을 한다. 여기서 한가지 아이디어가 제안되었는데, 필요할때마다 &lt;strong>필요한 정보만&lt;/strong> &lt;code>RAM&lt;/code>에서 정보를 &lt;code>L2&lt;/code>캐쉬에 저장했다가 가져오는것도 &lt;strong>나름 빠르지만&lt;/strong> 만약 &lt;strong>필요해 보이는 정보도&lt;/strong> 같이 가져와서 넣어두면 &lt;strong>훨씬 빠르지 않을까?&lt;/strong> 라는 생각이다.
+이러한 아이디어 실제로 꽤 실용성이 있는 생각이어서 요즘 &lt;code>CPU&lt;/code>는 필요한 정보뿐만이 아닌 필요해 보이는 정보도 미리 가져와 캐쉬에 저장해둔다. 만약 이 데이터가 필요한거였다면 &lt;code>CPU&lt;/code> 입장에선 도박에 성공해 훨씬 빠르게 일처리를 끝내는 것이고, 필요없는것 이였다면 &lt;code>Cache Miss&lt;/code>라 불리며 도박에 실패하고 &lt;code>RAM&lt;/code>에서 다음정보가 날라올때까지 노는수밖에 없게 되는것이다.&lt;/p>
+&lt;pre>&lt;code> 가끔씩 어떤 작업을 실행하다보면 연산해야하는일은 산더미 같은데 작업관리자에서 CPU 점유율은 40% 밖에 안되는 경우를 본적 있을것이다. 이게 바로 `Cache Miss`가 일어났을때 일이다. CPU 점유율은 리눅스 기준으로 IDLE이 아닌 시간의 백분률, 즉 노는시간 빼고 다른시간의 비율을 현재 CPU의 점유율이라고 표시하는데, 일은 쌓여있는데 일을 안하는건(IDLE) `Cache Miss`가 일어나 일감이 `RAM`에만 존재하고 `Cache`에 존재 안했을때가 바로 이때인 것이다. 불쌍한 컴퓨터 구박하지 말고 `Cache Miss`가 일어나도록 프로그래밍한 프로그래머를 구박하자.
+&lt;/code>&lt;/pre>
+&lt;p>하지만 CPU입장에서 다음에 필요한 정보를 예측하는건 꽤 어려운 문제이기에, CPU 입장에서 다음정보의 &lt;code>RAM&lt;/code>상의 위치를 추론하기 쉽게 하자는 취지에서 나온게 바로 &lt;code>DOD&lt;/code> &lt;code>데이터 지향 디자인&lt;/code>이다.
+어떻게 위치추론을 쉽게 만드냐 묻는다면 별건 없다. 상식적으로 이번에 연산한 데이터 바로 다음에 다음에 연산할 데이터가 있으면 추론하기 쉽지 않겠는가? 그래서 &lt;code>Array&lt;/code>하나에 연산에 사용할 데이터를 낭비없이 쑤셔넣으면 그게 바로 &lt;code>DOD&lt;/code>가 되는것이다.&lt;/p>
+&lt;p>&lt;code>DOD&lt;/code>가 얼마나 효과적인지 &lt;code>객체지향&lt;/code>프로그래밍과 비교해보자. &lt;code>OOP&lt;/code>의 경우 일반적으로 모든 연산해야할 데이터가 &lt;code>객체&lt;/code>속에 존재하고 각 &lt;code>객체&lt;/code>는 &lt;code>RAM&lt;/code>의 &lt;code>Heap&lt;/code>영역에서 그냥 자리나는데로 들어가 저장한다. 그 결과는 다음과 같다.&lt;/p>
+&lt;p>&lt;img src="./OOP-Caching-2.png" alt="" />&lt;/p>
+&lt;p>각 객체가 포함되어있는 정보가 연속적으로 저장되어있기에, 한번에 두칸씩 캐싱을 한다 할경우 연상에 필요한 &lt;code>data 1~5&lt;/code>의 정보를 꺼내오기까지 총 5번의 &lt;code>Cache Miss&lt;/code>가 발생하게 된다.&lt;/p>
+&lt;p>반면 &lt;code>DoD&lt;/code>의 경우 &lt;code>객체지향&lt;/code>에서 각 객체에 들어갈 데이터를 종류별로 한데모아 하나의 &lt;code>Array&lt;/code>에다가 저장을 한다. 이럴 경우 다음 그림과 같이 연산해야할 데이터는 &lt;code>RAM&lt;/code> 안에서 모두 연속된 공간에 존재하게 된다.&lt;/p>
+&lt;p>&lt;img src="./DOD-Caching-1.png" alt="" />&lt;/p>
+&lt;p>단순히 저장방법만 바꿨을 뿐인데 &lt;code>OOP&lt;/code>에서는 5번 캐싱으로 5개의 데이터를 불러올동안 &lt;code>DOD&lt;/code>에서는 4번의 캐싱으로 총 7개의 데이터를 불러올 수 있게된다!&lt;/p>
+&lt;p>이렇듯 &lt;code>DoD&lt;/code>가 &lt;code>Cache Miss&lt;/code>를 줄여 더 빠른 연산속도를 끌어낸다는 것을 이론적으론 쉽게 알 수 있지만 구체적으로 이게 얼마나 큰 효과를 발휘하는지에 대해서는 다음 두 링크를 들어가 보는것을 추천한다.&lt;/p>
+&lt;p>&lt;a class="link" href="https://android-developers.googleblog.com/2015/07/game-performance-data-oriented.html" target="_blank" rel="noopener"
+>안드로이드 Data-Oriented Programing 실험&lt;/a>&lt;/p>
+&lt;p>&lt;a class="link" href="http://knight666.com/blog/tutorial-a-practical-example-of-data-oriented-design/" target="_blank" rel="noopener"
+>Voxel 렌더링에서 OOP와 DOD의 비교&lt;/a>&lt;/p>
+&lt;p>전자의 경우 단순 loop문을 통해 &lt;code>Array&lt;/code>속 데이터를 꺼내오는 작업임에도 불구하고 &lt;code>Cache Miss&lt;/code>를 통해 발생하는 성능차이를 보여주고&lt;/p>
+&lt;p>후자의 경우 별도의 최적화 없이 똑같은 작업을 OOP와 DOD로 나눠 코딩하고 그 둘을 비교해 성능의 차이를 보여준다. 만약 여기에 &lt;code>SIMD&lt;/code>를 곁들이면 CPU 모델, 명령어 종류마다 다르지만 보통 3~8배 정도의 성능향상이 가능하다. &lt;code>OOP&lt;/code>에도 SIMD 기능을 추가할 수는 있겠지만 SIMD 명령어를 쓰려면 결국 어떻게든 데이터를 연속적인 공간에 모아놔야되서 결국 &lt;code>DOD&lt;/code>가 되버리니 참고 바란다.&lt;/p>
+&lt;h1 id="data-oriented-technology-stack-2">Data-Oriented Technology Stack? 2&lt;/h1>
+&lt;p>그래서 &lt;code>Data-Oriented Technology Stack&lt;/code>의 &lt;code>Data-Oriented&lt;/code>의 개념은 알게 되었다. 단순히 객체의 데이터를 &lt;code>Array&lt;/code>에 넣는것만으로도 성능 향상을 꽤할 수 있다는 것이다.&lt;/p>
+&lt;p>&lt;code>Technology&lt;/code>는 단순한 &lt;code>Cache Miss&lt;/code>를 최소화 해서 성능효과를 얻는것 뿐만이 아닌 &lt;code>SIMD&lt;/code> &lt;code>Multi Threading&lt;/code>등의 기술을 활용해서, 즉 &lt;code>DOD&lt;/code>에 맞는 최적화 작업을 통해 추가적인 성능을 얻을 수 있게하는 &lt;code>Technology&lt;/code>를 의미한다.&lt;/p>
+&lt;p>그럼 &lt;code>Stack&lt;/code>, 즉 패키지, 기술들의 집합이라는 뜻인데 어떤 기술들이 숨어있을까? Unity에서 내세운건 다음 세가지 이다.&lt;/p>
+&lt;ol>
+&lt;li>C# Job System&lt;/li>
+&lt;li>Entity Component System (ECS)&lt;/li>
+&lt;li>Burst Compiler&lt;/li>
+&lt;/ol>
+&lt;p>차근차근 설명해 주겠지만 미리 간단히 소개를 해보자면&lt;/p>
+&lt;p>&lt;code>Job System&lt;/code>과 &lt;code>Entity Component System&lt;/code>은 유니티의 기존 &lt;code>GameObject&lt;/code>를 대체하는 존재이다. 기존 &lt;code>Game Object&lt;/code>에서는 각 객체의 데이터와 그에대한 처리로직을 한데모아 저장해놨다면 &lt;code>DOTS&lt;/code>에서는 처리로직은 &lt;code>Job System&lt;/code>이, 각 객체에대한 정보는 &lt;code>Entity&lt;/code>가 가지고 있다.&lt;/p>
+&lt;p>각 &lt;code>Entity&lt;/code>에서 가지고 있는 정보는 &lt;code>Entity Component System (이하 ECS)&lt;/code>에서 통괄적으로 관리하며 &lt;code>Job System&lt;/code>이 데이터를 &lt;code>ECS&lt;/code>에 요청하면 &lt;code>ECS&lt;/code>는 데이터를 주고 &lt;code>Job System&lt;/code>은 병렬적으로 연산을 행한뒤 결과를 다시 &lt;code>ECS&lt;/code>돌려줘 데이터를 갱신한다.&lt;/p>
+&lt;p>서버쪽으로 비유를 해보자면 &lt;code>ECS&lt;/code>는 &lt;code>Database&lt;/code>같은 존재이고 &lt;code>Job System&lt;/code>은 &lt;code>DB&lt;/code>에서 정보를 빼와 처리한뒤 &lt;code>DB&lt;/code>를 갱신하는 클라이언트 적인 존재라고 할 수 있다.&lt;/p>
+&lt;p>&lt;code>Burst Compiler&lt;/code>는 &lt;code>Mono&lt;/code>를 대체하는 존재이다. 본래 &lt;code>Mono&lt;/code>가 &lt;code>범용성&lt;/code>을 목적으로 만들어진 존재라 게임용으로는 성능이 그닥 좋은놈이 아닌지라 유니티에서 그냥 새로 만들었다.&lt;/p>
+&lt;p>정도이다. 사실 이정도만 알아도 개발자입장에선 충분할 꺼 같지만, 이건 &lt;code>원리부터 파악하는 DOTS&lt;/code> 이므로 원리를 조금 까볼려고 한다.&lt;/p>
+&lt;h2 id="entity-component-system-ecs">Entity Component System (ECS)&lt;/h2>
+&lt;p>기존 유니티에서 가장 기본적인 요소는 바로 &lt;code>GameObject&lt;/code>이다. &lt;code>GameObject&lt;/code>는 화면상의 어떤 물체, 효과, 광원등의 정보를 담는 기본적인 단위라고 할수 있으며, &lt;code>Object&lt;/code>란 단어가 포함된것에서 알수있다싶이, &lt;code>OOP&lt;/code> 즉 객체지향적인 개념을 적용해 탄생한 용어이다.&lt;/p>
+&lt;p>&lt;code>GameObject&lt;/code>의 장점은 명확하다. 사람입장에서 프로그래밍하기 직관적이다. 하나의 &lt;code>GameObject&lt;/code>가 어떤 캐릭터를 정의한다면 이 캐릭터에 대한 광원효과, 움직일시 취해야하는 애니메이션, 체력, 능력같은 수치들을 그냥 하나의 &lt;code>Object&lt;/code>안에 저장하고 공격받을때, 특정 행동을 취할때 발생해야할 로직같은것들도 그냥 하나의 &lt;code>Object&lt;/code>안에 정의만 해놓으면 나머진 Unity가 알아서 처리해준다.&lt;/p>
+&lt;p>단점은 성능을 깍아먹고 최적화가 어렵다는 점이다. 일단 위의 &lt;code>DOD&lt;/code>경우에서 &lt;code>OOP&lt;/code>와의 비교만 보아도 &lt;code>OOP&lt;/code>의 예측할수 없는 메모리 배치상황은 &lt;code>Cache Miss&lt;/code>를 너무 잘 유발하고, 이는 곧 CPU가 놀고있는 상태를 너무 쉽게 유발한다. 아무리 컴퓨터 성능이 좋아졌다지만 &lt;code>1 fps&lt;/code>가 아쉬운 게임에서는 이는 곧 낭비였다.&lt;/p>
+&lt;p>근데 여기에 더 큰 문제가 있었으니, 이러한 객체화로인한 메모리상의 파편화는 범용성을 지향하는 &lt;code>Unity&lt;/code>입장에서는 &lt;strong>일반적인&lt;/strong> 최적화가 사실상 불가능하다는 것이다. 모든 각각의 &lt;code>Object&lt;/code>에서 고유의 처리알고리즘을 가지고 서로간의 의존성(Dependency)도 제대로 명시되지 않은 기존의 시스템에서는 개발자가 의도한 알고리즘을 보장하기 위해서 &lt;code>SIMD&lt;/code>같은 &lt;code>CPU Instruction&lt;/code>수준에서의 병렬처리는 대규모 연산이 아닌 하나의 &lt;code>Object&lt;/code>안에서의 소규모 연산으로 한정되었고, 멀티스레드를 사용한 멀티코어 연산은 유니티 사용저가 직접 개발하지 않으면 쓸수가 없었다.
+이는 좀 쉽게말하면 요즘 8코어 16스레드 컴퓨터가 난무하고, 나날이 병렬연산에 최적화된 CPU 명령어가 새로 출시되는 요즘 세상에서, &lt;strong>싱글코어 싱글스레드 연산&lt;/strong>이 기본옵션이고 &lt;strong>새로나온 CPU명령어는 거의 사용도 안한다는 것&lt;/strong>이다.&lt;/p>
+&lt;p>그러니 나온 해결책 첫 수단으로써 &lt;strong>연산에 필요한 데이터&amp;quot;만&amp;quot; 모아서 &lt;code>Array&lt;/code>화 시켜주는 존재&lt;/strong>가 바로 &lt;code>ECS&lt;/code>이다.&lt;/p>
+&lt;p>일단 데이터를 &lt;code>Array&lt;/code>로 모아주는것의 장점을 말하자면 당연하게도 &lt;code>Cache Miss&lt;/code>의 경우를 획기적으로 줄여준다. 그냥 메모리상에서 연속적인 공간을 불러오기만해도 필요한 모든 데이터를 불러오는것이니 &lt;code>Cache Miss&lt;/code>가 발생하지 않는다.
+또한 필요한 데이터&lt;strong>만&lt;/strong>을 불러오는 과정이 이미 이 데이터들은 병렬적으로 처리될수 있음을 암시하는것이기 때문에 추후 Job System에서 언급하겠지만 병렬연산이 무진장 쉬워진다.&lt;/p>
+&lt;p>그럼 &lt;code>ECS&lt;/code>는 어떻게 작동할까?&lt;/p>
+&lt;p>&lt;code>ECS&lt;/code>는 이름에 나와있는것처럼 3가지 구성요소로 구성되어있다. &lt;code>Entity&lt;/code>, &lt;code>Component&lt;/code>, &lt;code>System&lt;/code>. 먼저 &lt;code>Component&lt;/code>는 기존 유니티에서 사용되는 개념이랑 같은건데 좀 프로그래밍관점에서 말하면 3차원 공간에서의 좌표라던지 광원의 세기와 같은 실질적인 수치를 가지고있는 데이터이다. 이는 &lt;code>ECS&lt;/code>에서 인출 가능한 최소단위의 데이터이기도 한데 이러한 &lt;code>Component&lt;/code>를 모아놓은게 &lt;code>Entity&lt;/code>이다.&lt;/p>
+&lt;p>&lt;code>Entity&lt;/code>는 기존의 &lt;code>GameObject&lt;/code>에서 로직부분은 버리고 데이터만 모아놓은거라고 봐도 무방하다. 유니티에서는 하위호환을 위해 &lt;code>GameObject&lt;/code>를 &lt;code>Entity&lt;/code>화 해주는 함수를 만들어 놓았는데 실질적으로 하는일은 &lt;code>GameObject&lt;/code>가 가지고 있는 &lt;code>Component&lt;/code>들을 &lt;code>Entity&lt;/code>규격에 맞게 새로 배치하는 것 뿐이니 얼마나 &lt;code>GameObjet&lt;/code>와 유사한지 짐작할 수 있을것이다.&lt;/p>
+&lt;p>&lt;code>System&lt;/code>은 이러한 &lt;code>Entity&lt;/code>들을 관리하는 역할을 한다. &lt;code>System&lt;/code>이 &lt;code>Entity&lt;/code>를 관리하는 방법은 대충 다음과 같다.&lt;/p>
+&lt;ol>
+&lt;li>같은 종류의 &lt;code>Component&lt;/code>를 가진 &lt;code>Entity&lt;/code>들 끼리 뭉쳐 &lt;code>Archetype&lt;/code> 이란 이름을 붙혀준다.&lt;/li>
+&lt;li>같은 &lt;code>Archetype&lt;/code>를 가진 &lt;code>Entity&lt;/code>들을 뭉쳐서 16KB 단위로 메모리 상에 저장한다.&lt;/li>
+&lt;li>&lt;code>Job System&lt;/code>에서 &lt;code>Entity&lt;/code>가 가진 어떤 종류의 &lt;code>Component&lt;/code> 뭉치를 요청하면 해당 조건을 만족하는 &lt;code>Array&lt;/code>를 새로 만들어서 넘겨준다.&lt;/li>
+&lt;li>&lt;code>Job System&lt;/code>이 연산결과를 돌려주면 갱신해준다.&lt;/li>
+&lt;/ol>
+&lt;p>1번의 이유는 일단 규격을 통일시키기 위해서이다. &lt;code>Component&lt;/code>가 &lt;code>int&lt;/code>나 &lt;code>float&lt;/code>같은 숫자 데이터 위주로 구성되어 정적인 크기를 가졌으니, 같은 종류의 &lt;code>Component&lt;/code>로만 구성되어진 &lt;code>Entity&lt;/code>또한 정적인 정해진 크기를 가지게 됨으로 이를 &lt;code>Archetype&lt;/code>이란 이름하에 규격화 시키는 것이다. &lt;del>(라곤 말했지만 프로그래머가 Archetype을 직접 정의해 줘야한다.&lt;/del>&lt;/p>
+&lt;p>2번은 이렇게 규격화된 &lt;code>Entity&lt;/code>를 메모리상에 올려두는 작업이다. &lt;code>Entity&lt;/code>의 크기가 고정되어 있으므로 &lt;strong>&amp;ldquo;모든 Entity 에서 1번 Component 불러와!&amp;quot;&lt;/strong> 라는 작업을 할 경우 C++에서 포인터에 고정된 값만 더해가면서 정보를 읽어오는 작업만 해주면 되는 장점이 있다. 16KB단위로 쪼개는 이유는 큰 연속된 공간을 메모리상에 점유하면 메모리 유연성이 떨어지기 때문인데 컴퓨터 자료구조를 배웠다면 이정도면 충분히 이해할 것이라 믿는다.&lt;/p>
+&lt;p>3번은 모든 &lt;code>Entity&lt;/code>에서 특정 &lt;code>Component&lt;/code>만 모아 하나의 &lt;code>Array&lt;/code>로 복제하는 과정이다. 이렇게 함으로써 유니티는 &lt;code>OOP&lt;/code>라는 프로그래머 관점의 편리함과 &lt;code>DOD&lt;/code>라는 컴퓨터 관점의 최적화를 성취해 냈을뿐만이 더 쉬운 멀티스레드를 프로그래밍을 가능하게 했다.&lt;/p>
+&lt;p>4번은 3번과정의 역과정이다. 1번에서 &lt;code>Entity&lt;/code>의 규격을 통일시켜 놨기에 C++에서 인덱스값만 특정수만큼 증가시켜가면서 입력만 하면되는 아주 간단하고 빠른 작업이다.&lt;/p>
+&lt;p>이게 바로 &lt;code>ECS&lt;/code>이다. 가장 Simple한게 가장 Powerful 하다는 말처럼 복잡해 보이지만 실은 아주 단순한 구조로 이루어져 빠른 속도를 자랑하는것이 개인적으로는 매우 맘에드는 구조이다. ㅎ&lt;/p>
+&lt;h1 id="c-job-system">C# Job System&lt;/h1>
+&lt;p>&lt;code>ECS&lt;/code>가 데이터를 관리해주는 존재라면 &lt;code>Job System&lt;/code>은 &lt;code>ECS&lt;/code>로부터 데이터를 넘겨받아 실질적인 연산을 행하는 존재이다. 이놈도 &lt;code>ECS&lt;/code>처럼 이름이 구성요소인데 &lt;code>Job&lt;/code>과 &lt;code>System&lt;/code>으로 구성되어 있다.&lt;/p>
+&lt;p>&lt;code>Job&lt;/code>은 일이다. 어떤 &lt;code>Entity&lt;/code>의 어떤 &lt;code>Component&lt;/code> 데이터가 입력으로 들어왔을때 어떤일을 행하면 되며 그 결과 어떤 값이 수정되어져야 하는가? 를 정의하는 부분이다. 좀 쉽게 이해하자면 &lt;code>함수지향&lt;/code>에서 &lt;code>함수&lt;/code>와 같은놈이다. 내부상태를 가지지 않으며 같은 입력에 대해서는 언제나 같은 결과를 가진다는게 특징이다.&lt;/p>
+&lt;p>&lt;code>System&lt;/code>은 &lt;code>Job&lt;/code>에서 필요로 하는 데이터를 &lt;code>ECS&lt;/code>로 부터 가져오고, 현재 CPU에 최적화된 개수만큼의 &lt;code>Job&lt;/code>을 동시에 실행시킨 뒤 결과값을 다시 &lt;code>ECS&lt;/code>에 돌려주는 역할을 한다. 또 부가적으로 &lt;code>Job&lt;/code>간의 실행 타이밍을 결정해 주기도 한다. 현재로서는 &lt;code>jobA&lt;/code>는 &lt;code>jobB&lt;/code> 다음에 실행하라! 정도의 선택지만 가능하지만 추가될 예정이라고 Keynotes에서 들었으니 기대해볼만 하다 생각된다.&lt;/p>
+&lt;p>그럼 이게 어떻게 병렬화에 유리한지 물리엔진을 구현하는 경우를 생각해보자. 여기서 생각하는 물리엔진은 다음과 5만개의 객체에 대해 다음과 같이 간단한 연산을 행한다.&lt;/p>
+&lt;pre>&lt;code>1. 각 객체에서 가속도값을 불러와 속도값을 갱신한다.
+2. 각 객체에서 속도값을 불러와 위치값을 갱신한다.
+&lt;/code>&lt;/pre>
+&lt;p>기존 유니티의 경우 하나의 스레드가 5만개의 객체를 하나씩 들어가면서 하나씩 1,2의 연산을 행한 뒤 데이터를 갱신해가는 구조였다. 물론 5만개의 객체를 동시에 실행해도 되지만 여기서 문제가 되는게 &lt;code>Race Condition&lt;/code>이다. 여기서는 어떤 객체가 다른객체에 영향을 주지 않으니 상관 없지만 &lt;code>Unity&lt;/code>입장에서는 그걸 확인할 수 없다. 그리고 만약 A객체의 연산과정이 B객체에 영향을 줄 경우 B객체에서 연산을 행하는 도중 A객체 연산 스레드가 B의 메모리값을 변경할 경우 프로그래머 입장에서는 추적할 수 없는 오류가 발생하게 된다.&lt;/p>
+&lt;p>하지만 &lt;code>Job System&lt;/code>에서는 이러한 경우가 원천 차단된다. 일단 &lt;code>Job&lt;/code>에게 주어지는 데이터 자체가 &lt;code>ECS&lt;/code>에서 필요한 데이터만을 골라주었기 때문에 자기 객체 고유의 것으로 제한이된다. 어떻게든 &lt;code>Job&lt;/code>형태로 구현이 완료되었다는것은 암묵적으로 모든 연산이 병렬적으로 처리되도 괜찮다는 의미를 가지게되기 때문에 &lt;code>Unity&lt;/code>입장에서는 마음놓고 모든 작업을 병렬적으로 처리할 수 있게된다.&lt;/p>
+&lt;p>그럼 &lt;code>Job System&lt;/code>에서 어떤 객체가 다른 객체에 영향을 주는 연산을 행해야할땐 어떻게 해야할까? 이는 상황마다 다르게 대처해야한다. 예를들어 물리연산 과정에&lt;/p>
+&lt;pre>&lt;code>3. 객체간 충돌이 발생할 경우 두 객체의 위치를 참조하여 속도를 반대값으로 바꿔준다.
+&lt;/code>&lt;/pre>
+&lt;p>를 추가한다 생각해보자. 여기서 Unity Forum에서 내온답은 다음과 같다.&lt;/p>
+&lt;pre>&lt;code>두 객체가 충돌할때 이벤트를 발생시켜 Job과정과는 별개로 속도값을 바꿔준다.
+Job 과정에서 서로 충돌중인 두 객체를 확인한후 이들에게 특별한 Flag를 표시한 후 Flag가 표시된 객체들만을 모아서 새로운 Job을 실행시킨다.
+&lt;/code>&lt;/pre>
+&lt;p>이렇듯 일반적인 해결책이 존재하지는 않고 Case by Case로 자신의 상황에 맞게 새로운 방법을 만들어야 한다는게 단점이라면 단점이다.&lt;/p>
+&lt;p>&lt;code>Job System&lt;/code>을 사용할때 주의해야할 점은 &lt;code>Job&lt;/code>을 정의한다고 그게 자동으로 실행되지 않는다는 점이다. 언제나 &lt;code>Schedule&lt;/code> 함수를 통해 &lt;code>예약&lt;/code>을 잡아두면 &lt;code>System&lt;/code>이 그 &lt;code>Job&lt;/code>을 해치운다는 느낌이다. 이러한 구조를 통해 &lt;code>Job&lt;/code>을 실행시킬지 안시킬지를 유연하게 설정할 수 있다.&lt;/p>
+&lt;h1 id="burst-compiler">Burst Compiler&lt;/h1>
+&lt;p>유니티가 사용하는 스크립트 언어인 C#은 현재 마이크로소프트에서 개발한 .Net Framework와 C#을 플랫폼을 가리지 않고 실행하기위한 프로젝트인 Mono, 이 두가지 환경에서 실행가능하다. 유니티의 경우 다양한 플랫폼을 지원하기 위해 Mono를 채택했지만 사실 Mono가 멀티 플랫폼을 지향하는놈이라서 성능은 조금 안좋은 편이다.&lt;/p>
+&lt;p>하지만 1fps가 아쉬운 게임세상에서 아쉬운 성능의 컴파일러는 누가봐도 손해니 컴파일러를 손보자! 라는 생각에서 나온게 Burst Compiler이다. 자세한 정보는 너무 전문적인 분야라 본인도 자세히는 모르겠지만 게이밍 연산에 최적화 되어있어 단순히 컴파일러를 Burst Compiler로 선택하는 것 만으로도 10~15% 정도의 성능상 이득을 취할 수 있다고 한다.&lt;/p>
+&lt;p>이 Burst Compiler를 제대로 사용하기 위해 유니티에서는 몇가지 라이브러리를 추가했는데 대표적인게 &lt;code>Unity.Mathematics&lt;/code> 이다. 적혀있기론 이 라이브러리를 사용하면 CPU 레지스터 단위로 &lt;code>SIMD&lt;/code>를 사용할 수 있다고 한다. 위에서 밝혔다 싶이 &lt;code>SIMD&lt;/code>는 단순 연산대비 3~8배 정도의 성능향상을 가져오다는 점을 생각할때 쓰기는 조금 복잡해도 쓰는게 권장된다 생각한다.&lt;/p>
+&lt;h1 id="마무리">마무리&lt;/h1>
+&lt;p>필자는 유니티를 깔아본적도 없는게 함정이지만 유니티의 새로운 혁신인 DOTS에 대해 알아보았다.&lt;/p>
+&lt;p>기존의 패러다임과(OOP)는 좀 많이 달라 유니티계 고인물들이 익숙치 않다는게 좀 문제지만 개인적으로 DOTS에서 제시하는 프로그래밍 가이드라인을 따라가다보면 성능상의 이득뿐만이 아닌 큰 규모의 프로젝트에서 코드의 가독성을 높여줄꺼라 확신한다.&lt;/p>
+&lt;p>확신하는 이유는 경험이다. 비록 게임분야는 입문도 안해봤지만 머신러닝하면서 익혀본 노가다 계산 영역에서는 이렇게 Data Fetch 부분과 Proccessing 부분을 나눠두면 작은규모에선 짜증나도 큰큐모로 가면 직관성이 높아지고, MongoDB에 저장되어있는 데이터처럼 모든 객체가 대체적으로는 유사하지만 자유로운 형태를 가지는 데이터를 가지고 놀때도 새로운 Type을 정의해줄 필요가 없어 꽤 유용하다. &lt;del>(여러분 샘플링 데이터는 일정한 규격을 가진걸 고릅시다!)&lt;/del>&lt;/p>
+&lt;p>물론 장점만 있는것은 아닐 것이다. 하지만 일단 지금 당장은 그 단점이 뭔지 모르겠다.&lt;/p>
+&lt;p>실제 이러한 디자인으로 개발을 시작하면 뭔가 안좋은점이 나타날지도 모르겠지만, 객체지향의 형식을 가지고(Entity) 병렬화를 가능하게 하며(Job) Low-Level 최적화를 통해 성능을 이끌어낸(Burst Compiler) DOTS를 아직(2019년 5월) 미완성이라서 안쓰고 있다는 이유를 제외하고 다른 이유로 안쓴다는것은 손해라고 생각한다.&lt;/p></description></item><item><title>Freenom 도메인 갱신하는법</title><link>https://iwanhae.github.io/p/renewing_freenom_domain/</link><pubDate>Wed, 20 Dec 2017 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/renewing_freenom_domain/</guid><description>&lt;img src="https://iwanhae.github.io/p/renewing_freenom_domain/1.PNG" alt="Featured image of post Freenom 도메인 갱신하는법" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>매년 12월마다 iwanhae.ga 도메인을 갱신하는일을 벌써 3번째 해보는데
+할때마다 까먹고 Ticket만들어서 어떻게 하냐고 물어보는거 짜증나서 적어둔다.&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>알아두어야 할 점은&lt;/p>
+&lt;ol>
+&lt;li>Expire되기 14일 전 부터 갱신가능&lt;/li>
+&lt;li>최대 12개월 연장가능&lt;/li>
+&lt;li>연장횟수는 무제한&lt;/li>
+&lt;li>Expire 되기전에 Renew하지 못하면 몇달동안 해당 도메인은 유료가 되버려서 결국 카드결제 해야됨&lt;/li>
+&lt;/ol>
+&lt;p>정도고 방법은&lt;/p>
+&lt;p>&lt;a href="http://www.freenom.com">http://www.freenom.com&lt;/a>
+에 들어가면
+&lt;img src="./1.PNG" alt="" />
+요런 메인페이지가 나오는데
+&lt;img src="./2-1.PNG" alt="" />
+요기에 Renew 버튼이 있다.&lt;/p>
+&lt;p>그리고 Renew하면 된다.&lt;/p>
+&lt;p>끗&lt;/p>
+&lt;h2 id="후기">후기&lt;/h2>
+&lt;p>&lt;img src="./3.PNG" alt="" />
+&lt;del>사실 이분 너무 안쓰러워서 작성함&amp;hellip;&amp;hellip;&lt;/del>&lt;/p></description></item><item><title>사이버 지식 정보방 (사지방) 구글 접속기</title><link>https://iwanhae.github.io/p/saga_of_wanhae_the_googler/</link><pubDate>Tue, 24 Oct 2017 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/saga_of_wanhae_the_googler/</guid><description>&lt;img src="https://iwanhae.github.io/p/saga_of_wanhae_the_googler/1.png" alt="Featured image of post 사이버 지식 정보방 (사지방) 구글 접속기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>군인이다&amp;hellip;.&lt;/p>
+&lt;p>비록 군대에 있긴하지만 일과시간만 벗어나면 어느정도 자유시간이 보장되며 필자도 정기적으로 사지방에 와서 인터넷 세계를 맛볼수 있다.&lt;/p>
+&lt;p>다만 문제가 되는게&amp;hellip;&amp;hellip;.&lt;/p>
+&lt;ol>
+&lt;li>80번 443번 포트를 제외하고 모두 막혀있음&lt;/li>
+&lt;li>구글 접속이 안됨&lt;/li>
+&lt;/ol>
+&lt;p>1번은 일반적으로 크게 문제되는일은 없겠지만 필자의경우 ssh 접속에 제한되어 큰 골칫거리였다. 이에대한 해결법은 &lt;a class="link" href="https://blog.iwanhae.ga/shellinabox/" target="_blank" rel="noopener"
+>여기&lt;/a>를 참고하기 바란다.&lt;/p>
+&lt;p>2번은 비교적 최근 완전한 해결법을 발견해 그에대해 설명해보고자 한다.&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>사지방에서 구글이 안되는이유는 크게 두가지정도로 추정된다.&lt;/p>
+&lt;h4 id="이유-1-dns의-오류">이유 1, DNS의 오류&lt;/h4>
+&lt;p>하나는 DNS정보를 잘못받아온다. 사지방은 인터넷 사업자별로 각 ISP가 제공하는 기본 DNS서버를 사용해서 각 도메인에 대한 IP주소를 받아오는데 이게 일반적으로 알려진 구글의 IP주소가 아닌 이상한 IP주소를 받아온다.&lt;/p>
+&lt;p>아마 ISP측에서 군의 요청을 받고 구글 본 서버가 아닌 Proxy 서버로 안내하는 거라 추정되는데 문제는 이 Proxy서버가 제대로 작동하는놈이 아니라서 &lt;del>(라기보단 구글의 https보안이 강력한게 아닐까 생각된다.)&lt;/del> 우리가 구글접속에 곤란함을 느끼는 거라 추정된다.&lt;/p>
+&lt;p>해결법은 간단하게 다른 DNS서버를 사용하면 된다. 다만 사지방의 경우 모든 운영체제 관련 설정은 관리자에의해 막혀있음으로 CMD를 사용하여 DNS서버를 바꾸는수밖에 없다.&lt;/p>
+&lt;p>바꾸는 명령어는 다음과 같다.&lt;/p>
+&lt;p>&lt;code>netsh interface ip set dns &amp;quot;로컬 영역 연결&amp;quot; static 8.8.8.8&lt;/code>&lt;/p>
+&lt;p>참고적으로 8.8.8.8 은 구글에서 서비스하는 DNS 서버이다.&lt;/p>
+&lt;p>CMD의 경우 &lt;code>C:\Windows\System32\cmd.exe&lt;/code>에 존재하므로 직접 들어가서 실행시키면 된다.&lt;/p>
+&lt;h4 id="이유-2-멍청한-router">이유 2, 멍청한 Router&lt;/h4>
+&lt;p>나머지 하나는 군에 서비스되는 인터넷 네트워크 어딘가에 멍청한 라우터가 하나 껴있다는것이다. 네트워크쪽으로 조금만 공부해본 사람이면 금방 이해할텐데,&lt;/p>
+&lt;p>일단 사용자가 어떤 IP주소로 접속하려고 하면 일단 컴퓨터는 라우터로 TCP/IP 형식의 메세지로 접속요청을 라우터로 보내고 라우터는 메세지를 까보고 해당 IP주소대를 담당하는 다른 라우터에게 이 메세지를 전달하고, 전달하고, 전달하고를 계속해서 결국 메세지 전송에 성공하는 구조가 우리가 사용하는 인터넷이다.&lt;/p>
+&lt;p>문제는 중간에 멍청한 라우터가 껴있으면, 즉 해당 IP주소대를 담당하는 라우터가 어디에 있는지 모르는 라우터가 있으면 당연히 메세지를 성공적으로 전송될 수 없다.&lt;/p>
+&lt;p>바로 이 상황이 사지방에서 구글에 접속안되는 이유이다. 네트워크 설정을 이~~&lt;code>따구&lt;/code>~~렇게 해놓은 이유는 아마 구글접속기록을 파악하기 위해서가 아닐까 생각되는데 ~~&lt;code>(그도 그럴게 tracert 해본결과 군부대에서 외부로 나가는 GateWay에서 google.co.kr에 해당하는 IP주소로 가는 모든 요청이 거부된다.)&lt;/code>~~ 이것에 대한 해결법은 딱히 없다.&lt;/p>
+&lt;p>생각나는건 Gateway에 해당되는 Router를 해킹하던가 &lt;del>(해킹이래봤자 별거없고 아이디 비밀번호만 알아내면 된다.)&lt;/del>, 해당 Router를 학습시키던가 아니면 VPN과 비슷한 기법으로 우회통신하면된다.&lt;/p>
+&lt;h2 id="결론">결론&lt;/h2>
+&lt;p>할게없다&amp;hellip;&amp;hellip;&lt;/p>
+&lt;p>요즘 양자컴퓨터 관련해서 파보고는 있는데 정보에대한 접근이 심하게 제한되는 군부대에서 완전 새로운것에대한 공부는 어렵다고 최근 느끼고 있다.&lt;/p>
+&lt;p>소설이나 써볼까 생각중이다.&lt;/p>
+&lt;h2 id="추신">추신&lt;/h2>
+&lt;p>흠&amp;hellip;&amp;hellip;&lt;/p>
+&lt;p>자세한 이유는 불명인데 &lt;del>사지방에서 DNS Message 까보고 변조해서 주던가 구글 서버가 IP기반으로한 위치보고 일부로 근거리에 위치한 서버 IP주소 알려줬을수도 있음&lt;/del>&lt;/p>
+&lt;p>같은 DNS서버에 같은 질의에대한 응답이 서로 다르다는 충격적인 사실을 관측하였다&amp;hellip;. ㄷㄷ&lt;/p>
+&lt;p>&lt;img src="./1.png" alt="" />&lt;/p>
+&lt;p>왼쪽은 이 블로그서버에서 &lt;code>Google DNS Server&lt;/code>에 &lt;code>google.co.kr&lt;/code>에 대한 질의에 대한 응답이고 오른쪽은 사지방 컴터에서 한거다&amp;hellip;..&lt;/p>
+&lt;p>문제는 &lt;code>172.217.26.3&lt;/code>은 전혀 접속이 안되는 IP주소이고 &lt;del>(실존하지 않는건지 라우터가 멍청한지는 잘 모르겠다)&lt;/del> &lt;code>216.58.219.131&lt;/code>은 잘만 접속이 된다.&lt;/p>
+&lt;p>&lt;code>hosts&lt;/code>파일 변조로 임시땜빵으로 때우고는 있지만 나중에 시간들여서 자동으로 제대로된 IP주소 받아오게하는 프로그램 만들예정.&lt;/p>
+&lt;h2 id="추신2">추신2&lt;/h2>
+&lt;p>사지방에서 접속 차단이 아닌 접속불가가 나오는 홈페이지의 패턴을 찾아낸것같다.&lt;/p>
+&lt;p>일단 기본적으로 필자가 쓰는 사지방 컴퓨터에 부여된 IP주소는&lt;/p>
+&lt;p>&lt;code>172.28.XX.XXX&lt;/code>&lt;/p>
+&lt;p>이다.&lt;/p>
+&lt;p>이는 공식적으로 사설 IP주소로 할당되어있는 아주 정상적인 IP 주소이지만&lt;code>172.16.0.0~172.31.255.255&lt;/code>&lt;/p>
+&lt;p>&lt;code>tracert&lt;/code>로 아주 사소한 몇몇가지 실험을 해본 결과 172로 시작하는 IP주소로 가는 모든 요청은 라우터에서 나가질 못하고 다시 돌아온다&amp;hellip;..&lt;/p>
+&lt;p>문제는 세계 수많은 구글 서버중에서 우리나라랑 물리적으로 가까운 서버가 172로 시작되는 IP주소를 부여받은 상태이며, 그 다음은 예상했다싶이 &lt;code>서버가 응답하지 않음&lt;/code> 메세지를 받게되는 것이다.&lt;/p>
+&lt;p>&lt;del>(즉 라우터가 멍청한거다.)&lt;/del>&lt;/p>
+&lt;p>해결책은 172로 시작하지 않는 다른 구글 서버로 접속하는 것이다.&lt;/p>
+&lt;p>필자의 경우 hosts파일에다가 다음과 같은 규칙을 추가해놓고 사용하고 있다.&lt;/p>
+&lt;pre>&lt;code>216.58.192.35 www.google.co.kr
+216.58.192.35 google.co.kr
+216.58.192.35 accounts.google.co.kr
+216.58.192.46 www.tensorflow.org
+216.58.219.68 www.google.com
+216.58.192.33 research.googleblog.com
+&lt;/code>&lt;/pre>
+&lt;h2 id="추신3">추신3&lt;/h2>
+&lt;p>임시방편 배치파일 만듬 ㅇㅅㅇ
+&lt;a class="link" href="./DNSCHANGE.bat" >여기&lt;/a>&lt;/p></description></item><item><title>ShellinaBox 웹에서 즐기는 터미널</title><link>https://iwanhae.github.io/p/shellinabox/</link><pubDate>Sun, 01 Oct 2017 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/shellinabox/</guid><description>&lt;img src="https://iwanhae.github.io/p/shellinabox/1315785_orig.png" alt="Featured image of post ShellinaBox 웹에서 즐기는 터미널" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>지금 필자는 군인이다.
+군대에 있다.&lt;/p>
+&lt;p>다행이도 보직을 그런쪽으로 받아서 그런지 컴퓨터를 사용할 기회가 많으며 여가시간을 이용해 군대내 인트라넷이 아닌 외부 인터넷에 접속할 기회도 많다.&lt;/p>
+&lt;p>단지 문제가 있는건&amp;hellip;&amp;hellip; 열려있는 포트가 80이랑 443밖에 없다&amp;hellip;..&lt;/p>
+&lt;p>아시는분은 이미 알고있겠지만 이 두 포트는 일반적인 http 통신포트와 https통신포트로 즉, 웹서핑 이외에는 할수있는게 거의 없다.&lt;/p>
+&lt;p>일반적인 유저라면 이는 별 문제가 되지 않겠지만&amp;hellip;&amp;hellip; 필자에게 한가지 문제가 있는데 SSH가 안된다&amp;hellip;. (이놈은 22번 포트사용)&lt;/p>
+&lt;p>이런 상황에서 웹에서 터미널을 이용할 방법을 찾으며 여러가지 삽질을 하다가 찾아낸게 ShellInABox이다.&lt;/p>
+&lt;p>(이거 세팅하기까지는 Cloud9에서 제공하는 터미널 기능 썼다.)&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>설치는 쉽다.&lt;/p>
+&lt;p>&lt;code>apt install shellinabox&lt;/code>&lt;/p>
+&lt;p>끗.&lt;/p>
+&lt;p>설정도 쉽다.&lt;/p>
+&lt;p>&lt;code>/etc/default/shellinabox&lt;/code>
+(사용하는 포트, 기본적인 Black/White list 설정가능)&lt;/p>
+&lt;p>서비스확인은&lt;/p>
+&lt;p>&lt;code>service shellinabox start/stop/status&lt;/code>&lt;/p>
+&lt;p>그 외 기타 명령어는&lt;/p>
+&lt;p>&lt;code>shellinaboxd&lt;/code>&lt;/p>
+&lt;p>등으로 끝이다.&lt;/p>
+&lt;h2 id="결론">결론&lt;/h2>
+&lt;p>&lt;del>음핫핫핫핫&lt;/del>&lt;/p>
+&lt;p>&lt;del>군대에서 SSH로 서버에 접속만 가능하면 난 무적이다!!!&lt;/del>&lt;/p>
+&lt;p>는 농담이고 빨리 전역하고 싶습니다&amp;hellip;.
+( &lt;a href="https://goon.iwanhae.ga">https://goon.iwanhae.ga&lt;/a> )&lt;/p></description></item><item><title>원리부터 파악하는 비트코인</title><link>https://iwanhae.github.io/p/introduction_of_bitcoin/</link><pubDate>Fri, 24 Feb 2017 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introduction_of_bitcoin/</guid><description>&lt;img src="https://iwanhae.github.io/p/introduction_of_bitcoin/8369-bitcoin_102502.png" alt="Featured image of post 원리부터 파악하는 비트코인" />&lt;p>&lt;a href="https://git.iwanhae.ga/wan/introduction_of_bitcoin">https://git.iwanhae.ga/wan/introduction_of_bitcoin&lt;/a>&lt;/p>
+&lt;h3 id="서론">서론&lt;/h3>
+&lt;p>지금 (2016년 12월) 우리나라는 비트코인 열기가 한풀 꺽인 참이지만 세계적으로, 특히 중국의 경우 왠지모르게 엄청난 채굴경쟁과 함께 &lt;del>(사실 세계라긴보단 중국 내에서 열풍인데 총 채굴성능의 50% 이상이 중국에서 나옴)&lt;/del> &lt;del>(일본도 약간 유행중.)&lt;/del> 그 시세가 엄청 올랐다.&lt;/p>
+&lt;p>그 이유는 모르겠지만 생각난김에 비트코인을 처음보는사람이 이 포스트만보고 프로토타입을 구현할 수 있을정도의 설명을 적어보자 한다.&lt;/p>
+&lt;p>&lt;del>(이 글은 심심할때마다 조금씩 써집니다.)&lt;/del>&lt;/p>
+&lt;h3 id="진부하지만-글-시작하기에-좋은-비트코인이란">&lt;del>(진부하지만 글 시작하기에 좋은)&lt;/del> 비트코인이란?&lt;/h3>
+&lt;p>비트코인은 세계최초의 암호화폐, 세계최초의 비 중앙집권적 금용시스템, 블록체인을 실용화시켜 엄청나게 극단적인 사람들의 경우 &amp;ldquo;4차 산업혁명을 앞당기는데 중대한 역할을 함!&amp;ldquo;같은 타이틀을 보유하고 있는 뭔가 전설은 아니고 레전드급의 화폐이다.&lt;/p>
+&lt;p>금융학적으로는 대안화폐의 한 종류이며 화폐에대한 신용이 정부, 기관, 단체등에서 오지 않고 Hash함수와 비대칭키를 활용한 디지털 서명을 결합한 구조에서 온다는 순수하게 경제이외의 ~~(정치같은)~~힘이 작용하기 어렵다는 구조를 가지고있지만 그 신뢰구조가 유지되기위해 엄청난 전력과 자원을 소모해 한편으로는 욕을 얻어먹는 놈이기도 하다.&lt;/p>
+&lt;p>&lt;del>개인적으로는 비트코인을 &amp;ldquo;해쉬덕후의 결정체!&amp;rdquo; 라고 부른다. 참고로 해쉬함수에서 규칙성이 발견되면 비트코인체제는 바로 망한다.&lt;/del>&lt;/p>
+&lt;p>아마 이 글을 읽어보는 사람은 대충 비트코인이 뭔지 알꺼라 생각하니깐 소개는 이정도 하고 아마 대다수의 사람이 궁금해할 &amp;ldquo;블록체인&amp;quot;의 원리부터 설명해 보려한다.&lt;/p>
+&lt;h3 id="해쉬함수부터">해쉬함수부터!&lt;/h3>
+&lt;p>라고 하지만&amp;hellip;.. 비트코인체제는 정말 Hash덕후가 여기저기에 Hash를 덕지덕지 발라놨기때문에 사실상 Hash함수의 몇가지 특징을 알고가지 않으면 이해할수 없다.&lt;/p>
+&lt;p>일단 정의적으로 해쉬함수는 임의의 길이를 가진 어떤 임의의 데이터를 일정한 길이의 어떤 데이터로 바꿔주는 함수를 총칭한다.&lt;/p>
+&lt;p>이러한 함수들중 비트코인이 사용하는건 &lt;code>SHA256&lt;/code>(혹은 &lt;code>SHA-2&lt;/code>라고 불림)이라는 어떤데이터간에 256비트(=32바이트) 데이터로 바꿔주는 함수이다.&lt;/p>
+&lt;p>그 유명한 NSA에서 표준으로 정한 함수이며 일상(?)에서 파일이 변조되었는지 확인하는데 꽤나 자주 쓰인다.&lt;/p>
+&lt;p>그 이유는 다음 예시를 한번 보도록 하자.&lt;!-- raw HTML omitted -->
+&lt;code>ZVEZDA&lt;/code>라는 문자열을 &lt;code>SHA-256&lt;/code>함수에 통과시키면&lt;!-- raw HTML omitted -->
+&lt;code>483F0ED813DE699CAC39D2EEF86161E60C2513523AE08716578FEC7197CF0719&lt;/code>
+요론 결과값이 나온다. (16비트 표시)&lt;/p>
+&lt;p>그러면 &lt;!-- raw HTML omitted -->&lt;code>ZVEZDB&lt;/code>는 어떨까? 우리눈엔 A가 B로 바뀌었지만 비트단위로 보면 단 한개의 비트만 0에서 1로 바뀐 아주 사소한 변화이다.&lt;/p>
+&lt;p>하지만 그 결과는&lt;!-- raw HTML omitted -->
+&lt;code>6514D92556937B1E22AEADCF99F2B6AD2687A324F2632B7A31A4BA0CE191796B&lt;/code>로 전혀 다른값이 나온다는걸 알 수 있다.&lt;/p>
+&lt;p>이걸 &amp;ldquo;눈사태 효과&amp;quot;라고하며 데이터에 아주 사소한 변화만 발생해도 전혀 다른값이 나오는 현상을 말한다. (돌맹이 하나도 눈사태를 불러온다는 느낌?)&lt;/p>
+&lt;p>물론 &lt;code>SHA-256&lt;/code>은 해가 \(2^{256}\)개 밖에(?)없는 함수로 1:1대응이 아니다. 이는 즉슨 어떤 데이터를 Hash돌린거랑 또 다른 데이터를 Hash돌린거랑 결과같이 같게 나올 가능성이 있다. 다만 이는 \(1/2^{256}\)정도의 확률로 발생하며 사소한 변화인데 Hash값이 같은경우는 이보다 훨씩 적은 확률로 발생하므로&lt;/p>
+&lt;p>데이터 변조의 유무를 검증하는 용도로는 매우 적합한 함수라 할 수 있다.&lt;/p>
+&lt;h3 id="블록체인이란">블록체인이란?&lt;/h3>
+&lt;p>이제 블록체인에 대하여 알아보도록 하자.&lt;/p>
+&lt;p>일단 블록체인이란 단어를 살펴보자. 블록은 우리가 상상하는 뭔가 정육면체틱한 그놈 맞다. 블록에 체인(사슬)이 걸려있다? 맞다. 바로 그 상황이다.&lt;/p>
+&lt;p>여기서 블록이란 데이터, 즉 거래내역(A가 B에게 얼마 보냈네~같은 정보글)들이 모여 트리구조를 이룬 공간을 말한다. &lt;del>(해쉬트리로 구성되어있다.)&lt;/del>&lt;/p>
+&lt;p>이 블록은 대략 매 10분마다 하나씩 완성되어 비트코인 네트워크 전역으로 퍼지며 &lt;del>(블록은 &lt;a class="link" href="https://blockchain.info" target="_blank" rel="noopener"
+>여기서&lt;/a>관람가능)&lt;/del> 이렇게 생성된 N번째 블록은 N-1번째 블록의 무결점성을 증명해주는데 &lt;del>(여기에도 Hash가 쓰인다.)&lt;/del> 이렇게 N번째 블록이 N-1번째를 보증해주는게 마치 체인으로 감싸놓은것 같다해서 블록체인 이라는 이름을 붙였다고 한다.&lt;/p>
+&lt;p>그럼 N번째 블록은 N-1번째 블록을 어떻게 보증해 줄까?&lt;/p>
+&lt;p>답은 Hash다. &lt;del>또?&lt;/del>&lt;/p>
+&lt;p>정확히는 블록 전체의 Hash값은 아니다.&lt;/p>
+&lt;p>하나의 블록은 &lt;code>Header&lt;/code>와 &lt;code>Body&lt;/code>로 구성되는데&lt;/p>
+&lt;p>&lt;code>Body&lt;/code>에는 거래 내역이 Hash트리 구조로 작성되어 저장되어있으며&lt;/p>
+&lt;p>&lt;code>Header&lt;/code>에는 다음과 같은 정보가 담겨있다.&lt;/p>
+&lt;ul>
+&lt;li>블록버전&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/li>
+&lt;li>N-1번째 블록의 Hash&lt;/li>
+&lt;li>Body의 Hash트리의 Root에대한 Hash&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> (Merkle Root라 불림)&lt;/li>
+&lt;li>타임스탬프&lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>&lt;/li>
+&lt;li>난이도 목표&lt;/li>
+&lt;li>Nonce&lt;/li>
+&lt;/ul>
+&lt;p>위에 &lt;strong>N-1번째 블록의 Hash&lt;/strong>가 보이는데 이게 바로 &lt;strong>N-1번째 블록&lt;/strong>의 Header의 Hash값을 의미하며 이 존재로 인해 &lt;strong>N-1번째 블록&lt;/strong>이 변조되지 않았음을 증명할 수 있는것이다.&lt;/p>
+&lt;p>그럼 N번째 블록은 N+1번째 블록이 나오기까지 아무도 증명해 주지 않는것일까? 대충 생각해봐도 첫블록부터 N번째 블록까지 완전 새로 만들어서 퍼뜨리면 조작은 끝난거 아닌가? 생각하겠지만, 만약 그렇다면 전세계의 날고긴다는 해커들이 비트코인을 해킹하지 못했을리가 없다.&lt;/p>
+&lt;p>여기서 바로 &lt;strong>&amp;lsquo;난이도 목표&amp;rsquo;, &amp;lsquo;Nonce&amp;rsquo;, &amp;lsquo;채굴&amp;rsquo;&lt;/strong> 이 세가지 키워드가 엄청난 위력을 발휘한다.&lt;/p>
+&lt;h3 id="채굴은-무엇인가">채굴은 무엇인가?&lt;/h3>
+&lt;p>&lt;a href="https://blockchain.info">https://blockchain.info&lt;/a> 에 가보면 최신 블록의 정보를 확인할 수있다.&lt;/p>
+&lt;p>여기서 지금 이 글을 쓰고있는 순간 제일 최신버전의 블록인 451209번째의 블록의 Hash값을 보면
+&lt;code>00000000000000000107b993162a6de0bdd6eb31370de73df451133e22ecfa72&lt;/code>
+임을 알수가 있다.&lt;/p>
+&lt;p>흠&amp;hellip;.. 뭔가 이상하다.&lt;/p>
+&lt;p>앞에 0이 무진장 많다.&lt;/p>
+&lt;p>일반적으로는
+&lt;code>483F0ED813DE699CAC39D2EEF86161E60C2513523AE08716578FEC7197CF0719&lt;/code>
+요런식으로 나오는게 정상이다. (위에 &lt;code>ZVEZDA&lt;/code>예제의 경우)&lt;/p>
+&lt;p>하지만 451209번째 블록은 0이 많다. 우연일까? 물론 아니다.&lt;/p>
+&lt;p>451210번째 블록은&lt;/p>
+&lt;p>&lt;code>00000000000000000121054d8320164e25ca78bd9355a07d4e4f6748b4e1823e&lt;/code>&lt;/p>
+&lt;p>그 다음블록도&lt;/p>
+&lt;p>&lt;code>000000000000000002bafb09ce58e819efa3a4838a8b897492adee9d12653ddd&lt;/code>&lt;/p>
+&lt;p>.
+.
+.
+.&lt;/p>
+&lt;p>어느블록을 봐도 Hash값이 앞쪽에는 0으로 도배된것을 확인할 수 있다.&lt;/p>
+&lt;p>그럼 의도됬다는 것인데 왜 그럴까?&lt;/p>
+&lt;p>바로 이것이 &lt;strong>채굴&lt;/strong>과정인 것이다.&lt;/p>
+&lt;p>위에 Hash에대해 설명했던것을 조금 되세겨 보자면 Hash함수는 단지 1&lt;strong>비트&lt;/strong>의 정보만 변질되도 그 결과값은 엄청나게 크게 바뀜을 알수 있고 어떻게 바뀔치는 예측 불가함을 알수 있었다.&lt;/p>
+&lt;p>그 원리를 &lt;code>Block&lt;/code>의 &lt;code>Header&lt;/code>의 &lt;code>Hash&lt;/code>를 구하는데 똑같이 써먹는 것이다.&lt;/p>
+&lt;p>위에 블록 헤더에는 &lt;code>Nonce&lt;/code>라는 정보가 담겨있다고 했는데 &lt;del>(&lt;code>Nonce&lt;/code>란 사전적으로 임시땜빵의 같은 느낌의 단어)&lt;/del> 여기에 있는 정보를 &lt;strong>1비트&lt;/strong>씩 변질시켜가면서 &lt;code>Hash&lt;/code>값을 구해보는것이다.&lt;/p>
+&lt;p>그렇게 계속 &lt;strong>변질시켜보고 Hash값구하고&lt;/strong>를 반복하다보면 언젠가 앞쪽에 &lt;code>0&lt;/code>이 쌓여있는 Hash값이 발견될테고 그럼 채굴에 성공하는 것이다!&lt;/p>
+&lt;p>그럼 0이 몇개가 있는 Hash가 있어야 성공하는 것일까? 이에대한 정보가 &lt;code>난이도 목표&lt;/code>에 담겨있다.&lt;/p>
+&lt;h3 id="난이도-목표란">난이도 목표란?&lt;/h3>
+&lt;p>사실 Bitcoin Document에는 &lt;code>nBits&lt;/code>란 표현으로 쓰인다. (목표치라고 번역하는게 가장 이해하기 쉬운데 그냥 있어보일라고 &lt;code>난이도 목표&lt;/code>라 표현함) &lt;del>(는 개뿔 그냥 대충 임시로 써놨는데 나중와서 고치기 귀찮아서가 진실)&lt;/del>&lt;/p>
+&lt;p>정의적으로는 다음과 같다.&lt;/p>
+&lt;pre>&lt;code>The target is the threshold below which a block header hash must be in order for the block to valid, and nBits is the encoded form of the target threshold as it appears in the block header.
+&lt;/code>&lt;/pre>
+&lt;p>그렇다. 바로 여기에 블록 헤더의 Hash값에 0이 몇개 나와야하는지, 더 정확히는 그 Hash값이 얼마보다 작은값이 나와야 하는지에대한 정보가 담겨있다.&lt;/p>
+&lt;p>(결국 Hash도 문자가 보이긴 하지만 16비트 &lt;strong>숫자&lt;/strong>열이고 어떤 큰 수라는걸 알고있어야한다.)&lt;/p>
+&lt;p>(nBits는 SHA-256으로 생긴 256비트 공간을 차지하는 어떤 큰 수에대해 경계선을 제시하지만 nBits에 할당된 공간은 32비트밖에 안된다. 이 딜레마를 해결하기위해 지수표기식을 들고와 쓰고있는데 자세한건 &lt;a class="link" href="https://bitcoin.org/en/developer-reference#target-nbits" target="_blank" rel="noopener"
+>여기서&lt;/a>)&lt;/p>
+&lt;p>이 &lt;code>nBits&lt;/code>값은 대충 다음과 같은 알고리즘으로 정해진다.&lt;/p>
+&lt;hr>
+&lt;p>2,016개의 블록이 생성된다.
+-&amp;gt; 2주라는 시간이 흘렀는가? (20,160분 = 2주일)&lt;/p>
+&lt;p>YES -&amp;gt; nBits 유지&lt;/p>
+&lt;p>NO -&amp;gt; 2주일이 넘었는가? -&amp;gt; nBits값을 크게해서 난이도 하강
+NO -&amp;gt; 2주일이 안넘었는가? -&amp;gt; nBits값을 작게해서 난이도 증가&lt;/p>
+&lt;hr>
+&lt;p>nBits 증감의 정도는&lt;/p>
+&lt;pre>&lt;code>If it took fewer than two weeks to generate the 2,016 blocks, the expected difficulty value is increased proportionally (by as much as 300%) so that the next 2,016 blocks should take exactly two weeks to generate if hashes are checked at the same rate.
+If it took more than two weeks to generate the blocks, the expected difficulty value is decreased proportionally (by as much as 75%) for the same reason.
+&lt;/code>&lt;/pre>
+&lt;p>요렇게 정의되있는데 Difficulty는 상대적인 값으로 구하는법은 &lt;a class="link" href="http://bitcoin.stackexchange.com/questions/5838/how-is-difficulty-calculated" target="_blank" rel="noopener"
+>여기&lt;/a> 나와있다.&lt;/p>
+&lt;h3 id="채굴은-무엇인가-2--그렇게-어렵나">채굴은 무엇인가? 2- 그렇게 어렵나?&lt;/h3>
+&lt;p>그럼 이제 우리는 채굴과정이 &lt;code>블록헤더&lt;/code>의 &lt;code>Hash&lt;/code>값이 &lt;code>난이도 목표&lt;/code>에 제시된 값보다 작은값이 나오게 하는 &lt;code>Nonce&lt;/code>값을 찾아 나서는 과정이란것을 알게 되었다.&lt;/p>
+&lt;p>근데 이게 대체 뭐길레 전세계에서 제일가는 슈퍼컴퓨터도 별거 아니라고 하는 초월적인 컴퓨팅자원을 소모하고도 정복을 못한것일까?&lt;/p>
+&lt;p>계산을 해보자.&lt;/p>
+&lt;p>일단 &lt;code>SHA256&lt;/code>함수를 돌렸을때 어떤값이 나올지는 완벽하게 예상못한다.&lt;del>(적어도 지금까진 그렇다)&lt;/del> 즉, 내가 어떤파일 1비트를 변조시켰을때 그 값이 얼마나 달라질지는 계산해보지 않으면 모른다는 소리이다.&lt;/p>
+&lt;p>즉 돌리는사람 입장에서 &lt;code>SHA256&lt;/code>함수의 결과값은 완벽하게 &lt;code>Random&lt;/code>하다고 할 수도있다.&lt;/p>
+&lt;p>그리고 &lt;code>SHA-256&lt;/code>의 결과값은 \(2^{256}\)개가 존재한다.&lt;/p>
+&lt;p>451209번째 블록의 난이도 &lt;code>nBits&lt;/code>는 10진법으로 402836551, 16진법으로 0x1802CC47 이걸 256비트 부호없는 정수형으로 바꾸면&lt;/p>
+&lt;p>&lt;code>000000000000000002CC47000000000000000000000000000000000000000000&lt;/code>
+라는 값이 된다.&lt;/p>
+&lt;p>&lt;del>(참고로 451209번째 블록의 Hash값은 &lt;code>00000000000000000121054d8320164e25ca78bd9355a07d4e4f6748b4e1823e&lt;/code>로 위보다 작다.)&lt;/del>&lt;/p>
+&lt;p>계산을 좀 쉽게하기위해
+&lt;code>0000000000000000030000000000000000000000000000000000000000000000&lt;/code>
+이하의 숫자가 나오면 채굴 성공이라 할때&lt;/p>
+&lt;p>Hash를 돌려서 저 안에 들어올 확률은
+$$\frac{0x30000000000000000000000000000000000000000000000}{0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}$$&lt;/p>
+&lt;p>좀더 사람눈에 보기쉽게 표현하자면
+$$\frac{3*16^{47}}{2^{256}} = \frac{3}{2^{68}} = \frac{3}{295,147,905,179,352,825,856}$$&lt;/p>
+&lt;p>(일&amp;lt;십&amp;lt;백&amp;lt;천&amp;lt;만&amp;lt;억&amp;lt;조&amp;lt;경&amp;lt;해)&lt;!-- raw HTML omitted -->
+대충 &lt;code>1해분의 1&lt;/code> 정도의 확률이다. 지금 전세계의 비트코인 채굴 컴퓨터는 약10분동안 &lt;code>1해분의 1&lt;/code> 가능성을 계속 찾아내어 블록을 완성시키고 블록체인에 결합해 놓고 있는것이다.&lt;/p>
+&lt;p>확률적으로만 생각하면 현재(451209번째 블록) 블록체인 난이도는 &lt;code>500PetaHash/s&lt;/code> (=초당 50경번 Hash함수 돌림) 의 성능을 10분동안 돌려야지 블록 하나를 완성할 수 있는 난이도라는 것이다.&lt;/p>
+&lt;p>CPU 1Hz로 해쉬연산 한번 한다는 무식한 가정을 한다해도, 3Ghz짜리 데카코어라 가정해도 기껏해야 &lt;code>30GigaHash/s&lt;/code>이다.&lt;/p>
+&lt;p>이것이 바로 &lt;code>비트코인&lt;/code>은 안전하다는 이유이다.&lt;/p>
+&lt;h3 id="채굴은-무엇인가-3--조금더-생각해봅시다">채굴은 무엇인가? 3- 조금더 생각해봅시다.&lt;/h3>
+&lt;p>위쪽에 블록헤더에 어떤 정보가 들어가는지 간략하게 설명해 놓았다. 좀 더 자세히 적어보겠다.&lt;/p>
+&lt;!-- raw HTML omitted -->
+&lt;p>자, 눈치빠른사람은 눈치 챘을것이다.&lt;/p>
+&lt;p>Nance의 용량이 4Bytes밖에 안된다. 여기에 변조를 줘봤자 기껏해야 \(2^{32}=4,294,967,296\)의 경우의 수 밖에 안나온다. (약 40억개)&lt;/p>
+&lt;p>&lt;code>SHA-256&lt;/code>의 모든 경우의수인 \(2^{256}\)개를 유도해낼수 없는 것이다.&lt;/p>
+&lt;p>그럼 어떻게 해야할까?&lt;/p>
+&lt;p>1차적인 답은 &lt;code>타임스탬프&lt;/code>값을 바꾸는 것이다. 40억개를 연산하는동안 시간은 흐를테고 흘러간 시간을 반영해 &lt;code>타임스탬프&lt;/code>를 변조시킨뒤 다시 &lt;code>Nance&lt;/code> 0x00000000부터 0xFFFFFFFF까지 돌려보면된다.&lt;/p>
+&lt;p>하지만 여기서 문제가 또 생긴다.&lt;/p>
+&lt;p>컴퓨터입장에선 경우의수가 기껏해야(?) 40억개밖에 안되기때문에 4GigaHash/s의 연산속도만 넘어가도 1초안에 모든 경우의수를 시도해 볼수 있게된다. &lt;del>(하지만 위에 계산한것처럼 요즘 연산속도는 500PH/s)&lt;/del>&lt;/p>
+&lt;p>그럼 어떻게 해야할까?&lt;/p>
+&lt;p>추후에 언급하겠지만&lt;/p>
+&lt;p>채굴을 할때 거래장부를 모아 먼저 Body를 구성하게 되는데 이때 채굴자에게는 &lt;code>12.5BTC&lt;/code>(2017년기준)의 돈을 자기 계좌로 입금함과 동시에 100바이트정도의 자신만의 문구를 입력할 권리를 준다.&lt;/p>
+&lt;p>이 문구를 조금 변형시키면 &lt;code>Mukle Root&lt;/code>값이 많이 변형되고 이럼 또 새로운 경우의 수를 탐색할수 있게된다.&lt;/p>
+&lt;h3 id="채굴은-무엇인가-4--mukleroot는-뭔가">채굴은 무엇인가? 4- MukleRoot는 뭔가?&lt;/h3>
+&lt;p>블록 헤더는 위에있는내용이 전부이긴 하지만 아직 MukleRoot에 대해 설명을 안했다.&lt;/p>
+&lt;p>Mukle Root는 쉽게말하자면 블록의 &lt;code>Body&lt;/code>부분을 증명해주는 &lt;code>Hash&lt;/code>이다.&lt;/p>
+&lt;p>&lt;code>Body&lt;/code>부분에는 어디서 어디로 얼마만큼의 금액이 이동했는지에 대한 내용이 대충 1000~2000건정도가 들어있는데 바로 이부분에 대한 증명이라고 보면된다.&lt;/p>
+&lt;p>여기서 도입된게 &lt;code>Mukle Tree&lt;/code>이다.&lt;/p>
+&lt;p>사실 별거 없다.&lt;/p>
+&lt;p>&lt;img src="./Hash_Tree.svg.png" alt="" />&lt;/p>
+&lt;p>위 그림처럼 각 거래내역에 대해 Hash값을 구한뒤&lt;/p>
+&lt;p>구한 Hash값이랑 Hash값이랑 이어 붙여서 또 Hash값을 구하는 전형적인 트리구조이다.&lt;/p>
+&lt;p>여기서 블록헤더에 저장되는 Hash값은 그림상에서 맨위 &lt;code>Top Hash&lt;/code>라고 적혀있는 부분의 &lt;code>Hash&lt;/code>값이다.&lt;/p>
+&lt;p>&lt;strong>문제는 본인은 아직 이러한 구조를 취함으로써 얻는 본질적인 이득을 모르겠다.&lt;/strong> &lt;del>(머클트리=해시트리 에 대한 설명이 너무 적다. 관련논문 찾아보자니 귀찮고&amp;hellip;.)&lt;/del>&lt;/p>
+&lt;p>추후 &lt;a class="link" href="http://nacamp.tistory.com/16" target="_blank" rel="noopener"
+>이 글&lt;/a>을 보고 어떤건지 탐색해볼 예정이긴 하나 혹시 쉽고 명료하게 설명 가능한 사람이 있다면 댓글로 남겨주길 바란다.&lt;/p>
+&lt;h3 id="body에-들어갈-내용들을-알아보자">&lt;code>Body&lt;/code>에 들어갈 내용들을 알아보자!&lt;/h3>
+&lt;p>이제껏 블록에서 &lt;code>Header&lt;/code>부분에 대해 알아보았다.&lt;/p>
+&lt;p>이젠 &lt;code>Body&lt;/code>차례이다.&lt;/p>
+&lt;p>&lt;code>Body&lt;/code>에는 위에서 수차례 언급했다싶이 &lt;strong>거래내역&lt;/strong>이 저장되있는 장소이다.&lt;/p>
+&lt;p>그리고 거래내역이 어떻게 저장되나?에 대해 설명하기 앞서 비트코인 지갑에 대해서 설명해 보자고 한다. &lt;del>(이제서?)&lt;/del>&lt;/p>
+&lt;h3 id="지갑">지갑!&lt;/h3>
+&lt;p>비트코인을 사용하게되면 먼저 지갑을 만드게된다.&lt;/p>
+&lt;p>그리고 지갑안에는 수많은 &lt;strong>개인키&lt;/strong>가 저장되어있다.&lt;/p>
+&lt;pre>&lt;code>보통 지갑전용의 어떤 키가 있고 그 키를 Seed로 난수를 생성한다던가와 같은 방법으로 해당 키로 어떤 일정한 규칙으로 여러가지 개인키를 만드는 알고리즘을 사용한다. 그래서 결론적으로 사용자가 알고있어야 하는키는 지갑전용의 어떤키 하나면 되게된다.
+비트코인은 사용자의 익명성을위해 한번 사용한 개인키(계좌)는 다시 사용하지 않을것을 권장한다.
+&lt;/code>&lt;/pre>
+&lt;p>이 개인키는 256비트의 임의의 숫자열로 진짜 무작위이다.&lt;/p>
+&lt;p>이 개인키를 &lt;code>타원곡선암호법(ECC)&lt;/code>에다 넣고 돌리면 공개키가 완성되고&lt;/p>
+&lt;p>이 공개키를 SHA256에 넣고 돌린 후 사용자가 보기쉽게 BASE58Check 인코딩을 하면 이게 바로 우리가 송금할때 입력하는 &lt;strong>계좌번호&lt;/strong>가 완성되는 것이다.&lt;/p>
+&lt;p>&lt;code>공개키&lt;/code> = &lt;a class="link" href="https://ko.wikipedia.org/wiki/%ED%83%80%EC%9B%90%EA%B3%A1%EC%84%A0_%EC%95%94%ED%98%B8" target="_blank" rel="noopener"
+>ECC&lt;/a>(&lt;code>개인키&lt;/code>)&lt;/p>
+&lt;p>&lt;code>계좌번호&lt;/code>=BASE58Check(SHA-256(&lt;code>공개키&lt;/code>))&lt;/p>
+&lt;p>함수형식으로 살펴보면 위와같은 느낌이다.&lt;/p>
+&lt;p>다만 위 함수는 역추론이 사실상 불가능하기때문에 &lt;code>계좌번호&lt;/code>에서 &lt;code>공개키&lt;/code>를 유추해낼 수 없고, &lt;code>공개키&lt;/code>에서 &lt;code>개인키&lt;/code>를 유추해 낼 수 없다.&lt;/p>
+&lt;h3 id="거래">거래&lt;/h3>
+&lt;p>자 이제 개인키와 돈을받을 주소가 생겼다.&lt;/p>
+&lt;p>그럼 거래는 어떻게 할까?&lt;/p>
+&lt;p>A가 B에게 돈을 넘긴다는 상황을 생각해보자.&lt;/p>
+&lt;ol>
+&lt;li>일단 A는 개인키를 이용해 서명을한다.&lt;/li>
+&lt;li>그리고 &lt;a class="link" href="https://en.bitcoin.it/wiki/Transaction" target="_blank" rel="noopener"
+>bitcoin표준&lt;/a>에 맞게 &lt;code>스크립트&lt;/code>, 송금내역등이 포함되있는 거래내용을 만들어낸다.&lt;/li>
+&lt;li>자신과 연결되있는 이웃노드에 이 내용을 전한다.&lt;/li>
+&lt;li>이웃노드는 그 이웃노드에게 내용을 전한다.&lt;/li>
+&lt;li>전하다보면 채굴노드에게도 이 내용이 전해질 것이다.&lt;/li>
+&lt;li>채굴노드는 이 내용을 블록에 넣는다.&lt;/li>
+&lt;li>블록이 추가된다.&lt;/li>
+&lt;li>거래가 인정된다.&lt;/li>
+&lt;/ol>
+&lt;p>대충 이런식이다.&lt;/p>
+&lt;p>헌데&amp;hellip;.. 스크립트? 이게 뭔소릴까?&lt;/p>
+&lt;h3 id="스크립트">스크립트&lt;/h3>
+&lt;p>비트코인은 어떤 노드가 거래를 발생시킬때 이 거래가 합당한 거래인지~~(그러니깐 본인이 발생시킨 거래가 맞는지)~~검증하기위해 무려 **간단한 프로그램 가능한 언어**를 사용한다!!&lt;/p>
+&lt;p>이게 바로 &lt;a href="https://blockchain.info">https://blockchain.info&lt;/a> 의 세부적인 거래내역에 들어가보면 있는 &lt;code>Script&lt;/code>의 정체이다.&lt;/p>
+&lt;p>자세한 내용은 &lt;a class="link" href="https://en.bitcoin.it/wiki/Script" target="_blank" rel="noopener"
+>여기&lt;/a>서 확인할 수있다.&lt;/p>
+&lt;pre>&lt;code>위 링크를 들어가보면 중간중간 빨간색으로 `disabled`된 명령어들을 볼수있는데 이것들이 비활성화된 덕분에 이 언어는 튜링불완전하다. 쉽게말하면 프로그램 진행중에 논리오류날 일은 없다.
+&lt;/code>&lt;/pre>
+&lt;p>이 스크립트의 진행결과 마지막으로 &lt;code>True&lt;/code>가 반환(?)되면 이 거래는 정당한 거래로 보고 인정되는 구조이다.&lt;/p>
+&lt;p>굳이 검증절차를 &lt;code>Script&lt;/code>로 해놓은 이유는 단순한 1:1거래뿐만 아닌 n:n거래부터 다수의 서명이 포함되 진행되는 거래 ~~(주로 기업간 거래)~~도 지원하기 위해서 라고 하는데 자세한건 잘 모르겠고&lt;/p>
+&lt;p>이 스크립트는 몇가지 표준규격이 존재하고 &lt;del>(표준 안지켜도 채굴자가 OK하면 인정은 됨)(대신 채굴자가 표준 엄격하게 지키면 인정 안됨)&lt;/del>&lt;/p>
+&lt;p>그 중 가장 많이쓰는유형은 &lt;code>Pay to Public Key&lt;/code>라는 형식의 스크립트이다.&lt;/p>
+&lt;pre>&lt;code>&amp;lt;서명&amp;gt; &amp;lt;공개키&amp;gt; OP_DUP OP_HASH160 &amp;lt;공개키Hash&amp;gt; OP_EQUALVERIFY OP_CHECKSIG
+&lt;/code>&lt;/pre>
+&lt;p>왼쪽에서부터 오른쪽으로 진행되며 한 명령어가 실행될때마다 Stack에 쌓이는 구조이다.&lt;/p>
+&lt;p>위 명령어는 다음과 같이 실행된다.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&amp;lt;서명&amp;gt;: 그냥 Push&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&amp;lt;공개키&amp;gt;: 그냥 Push&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>OP_DUP: 맨 위에꺼 복사&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>OP_HASH160: RIPEDMD(SHA256(맨 위에꺼))&lt;!-- raw HTML omitted -->&amp;lt;공개키HashA&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&amp;lt;공개키Hash&amp;gt;: 그냥 Push&lt;!-- raw HTML omitted -->&amp;lt;공개키Hash&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;공개키HashA&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>OP_EQUALVERIFY: 맨위에꺼랑 그 밑에꺼 같은지 비교해보고 아니면 Break 맞으면 그냥 진행&lt;!-- raw HTML omitted -->&amp;lt;공개키&amp;gt;&lt;!-- raw HTML omitted -->&amp;lt;서명&amp;gt;&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>OP_CHECKSIG:&lt;a class="link" href="https://en.bitcoin.it/wiki/OP_CHECKSIG" target="_blank" rel="noopener"
+>여기참조&lt;/a>
+Return true;&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>이렇게 검증절차를 거쳐 인정되면 채굴노드는 이를 블록안에 넣고
+&lt;code>Mukle Tree&lt;/code>를 만들어낸 뒤 &lt;code>블록 헤더&lt;/code>의 &lt;code>Hash&lt;/code>값이 &lt;code>nBits&lt;/code>이하가 나오게 엄청난 연산을 하고 그 거래는 인정되는 것이다.&lt;/p>
+&lt;h3 id="채굴은-무엇인가-5--채굴자는-돈을-어떻게-받지">채굴은 무엇인가? 5- 채굴자는 돈을 어떻게 받지?&lt;/h3>
+&lt;p>이는 간단하고 위쪽에서 간략히 밝히며 넘어갔는데 매 블록마다 &lt;code>CoinBase&lt;/code>라는 이름으로 주인없는 돈이 생긴다.&lt;/p>
+&lt;p>채굴자는 &lt;code>블록바디&lt;/code>에 이 돈이 자기계좌로 오는 거래내역을 먼저 만들고 채굴을 시작하는 것이다.&lt;/p>
+&lt;p>그러다 채굴에 성공하면 그 블록은 블록체인대열에 포함될테고 자기가 돈을 받는것이 인정되는 것이다.&lt;/p>
+&lt;p>&lt;code>CoindBase&lt;/code>에 의해 매 블록마다 생성되는 금액은 약 4년마다 반감하고&lt;/p>
+&lt;p>2016년 7월 한번 반감한뒤 2017년 현재 매 블록마다 12.5BTC의 금액이 생기고 있다.&lt;/p>
+&lt;p>그럼 반감기가 계속되다 &lt;code>CoinBase&lt;/code>에서 돈이 안나오면 채굴자들은 돈을 못버는것일까?&lt;/p>
+&lt;p>아니다.&lt;/p>
+&lt;p>비트코인에서 송금을 하다보면 &lt;code>수수료&lt;/code>가 붙는 사실을 알 수 있는데 이 수수료는 채굴에 성공한 사람(=블록 만든사람)이 가져가는 돈이다.&lt;/p>
+&lt;p>수수료의 금액은 송금한 돈의 양이 아닌 거래내역의 크기(Bytes)에 달려있으며 이 금액은 지금도 합의중에 있다.&lt;/p>
+&lt;p>물론 지금은 합의중에 있으므로 수수료의 크기를 자기가 직접 설정할 수 있다.&lt;/p>
+&lt;p>보통 수수료가 높은 거래일수록 채굴자들이 먼저 블록에 넣어줌으로 급한거래에는 수수료를 많이 주는것이 좋다.&lt;/p>
+&lt;p>수수료가 적으면 블록에 잘 포함되지 않는데 이럴땐 시간이 많이 지나가다보면 우선도 알고리즘에서 우선도가 높아짐으로 언젠간 거래에 포함은 된다.&lt;/p>
+&lt;p>물론&amp;hellip;.. 수수료가 없으면 영원에 거래가 블록에 포함 안될가능성이 높다.&lt;/p>
+&lt;p>현재(2017년 2월)기준으로 약 7만건의 거래가 블록에 등록되지 않았고 블록당 1500~2200건의 거래가 입력되 있다. (블록의 크기는 1MB이하이므로)&lt;/p>
+&lt;p>10분마다 1500~2200건이 처리된다해도 7만건이 언제 다 처리될지는&amp;hellip;..&lt;/p>
+&lt;p>이러다가 거래가 Cache에서 지워지면 거래도 지워지게 된다&amp;hellip;..&lt;/p>
+&lt;p>돈을 받는입장이라면 수수료 어느정도 내게해서 최대한 빨리 블록에 등록되게 하는편이 좋다.&lt;/p>
+&lt;pre>&lt;code>일부 Mining Pool의 경우 기여도에 따라 수수료없어도 자기 자신들의 거래를 블록에 넣어주는 서비스를 제공하기도 한다.
+&lt;/code>&lt;/pre>
+&lt;p>블록에 6번이상 쌓여야 안전하다는 말이 있는데 이부분은 다음파트에서 설명하도록 하겠다.&lt;/p>
+&lt;h3 id="그다음은">그다음은?&lt;/h3>
+&lt;p>이런 엄청난 연산을 거쳐 블록을 완성했다. 그 다음은?&lt;/p>
+&lt;p>이 블록을 비트코인 네트워크 전체에 전파시켜야 한다.&lt;/p>
+&lt;p>채굴자는 자기 자신이 만든 블록을 다른사람한테 전송한다.&lt;/p>
+&lt;p>그럼 다른사람은 이 블록이 규격에 맞게 제작되었는지 간단한 검증을 한뒤 또 다른사람에게 전파시킨다.&lt;/p>
+&lt;p>그리고 네트워크 전체는 이 블록을 인정한다.&lt;/p>
+&lt;p>그것이 끝이다&amp;hellip;&amp;hellip;.&lt;/p>
+&lt;p>라고 하고싶지만 네트워크 규모가 규모다보니 전체로 퍼지는데 시간이 걸린다.&lt;/p>
+&lt;p>그리고 여러분도 알다싶이 채굴에 성공하면 돈이나오는데 이 돈은 각 블록마다 &lt;code>12.5BTC&lt;/code>의 주인없는 돈이 생겨 채굴자가 이 돈을 자기 계좌에 지급되도록 하고 블록을 완성시켜 네트워크 전체에 전파시켜 인증받으면 말그대로 돈이 생기는 것이다.&lt;/p>
+&lt;p>그럼 생각해보자.&lt;/p>
+&lt;p>A라는 채굴자가 자기계좌로 돈오게 블록 완성했고&lt;/p>
+&lt;p>1초뒤 지구 반대편에서 B라는 채굴자가 자기계좌로 돈오게 블록을 완성했다.&lt;/p>
+&lt;p>A에서 B까지 물리적 거리때문에 A지역에는 a버전의 블록이 떠돌아다니고 B지역에는 b버전의 블록이 떠돌아다닌다.&lt;/p>
+&lt;p>그리고 그 중간쯤 지역해서 각 노드는 &lt;code>a블록&lt;/code> &lt;code>b블록&lt;/code>을 둘다 받았다.&lt;/p>
+&lt;p>누굴 인정해줘야할까?&lt;/p>
+&lt;p>이 딜레마를 해결하기 위해 생겨난게 &lt;code>Difficulty&lt;/code>, 즉 난이도 라는 개념이다. (위쪽에 &lt;code>nBits&lt;/code>랑 같이 언급했음)&lt;/p>
+&lt;p>결론부터 말하자면 &lt;code>난이도&lt;/code>가 높은 블록을 인정해 준다. 하지만 난이도가 같을경우에는?&lt;/p>
+&lt;p>&lt;code>a블록&lt;/code>이 있고 &lt;code>b블록&lt;/code>이 있다. 채굴자는 둘중 한 블럭을 잡아서 다음 블록을 만들고 있을 것이다.&lt;/p>
+&lt;p>그렇게 &lt;code>a1블록&lt;/code> &lt;code>b1블록&lt;/code>이 생겼을테고 또 난이도를 검사해서 난이도가 높은쪽을 인정한다.&lt;/p>
+&lt;p>이렇게 하다보면 다 해결되긴 하지만&lt;/p>
+&lt;p>딱 한번 이게 계속 반복되서 &lt;code>6차블록&lt;/code>까지 가는일이 생겼었다. (ㅎㄷㄷ)&lt;/p>
+&lt;p>그때 비트코인 개발진이 &lt;code>긴급코드&lt;/code>발령해서 강제적으로 블록 하나를 잡아서 인정하고 나서야 사건이 마무리 됬었다.&lt;/p>
+&lt;p>이때 일어난 일때문에 인터넷상에 **블록에 입력되고 6블록은 지나야 안전하다!**라는 말이 나오고 있는것이다.&lt;/p>
+&lt;p>물론 그 후 개발진은 더욱 섬세한 블록인증절차를 만들었기때문에 그런일은 잘 안일어나고 설사 같은일이 반복된다 하더레도&lt;/p>
+&lt;p>블록이 인증받지 못해 공중분해된 거래는 언젠간 다른블록안에 들어가기때문에 별 문제는 없다.&lt;/p>
+&lt;p>단지&amp;hellip;.. &lt;a class="link" href="https://btc.com/" target="_blank" rel="noopener"
+>여기를&lt;/a>보면 수만건의 거래가 블록에 포함되지 못하고 대기중인것을 알 수 있을것이다. 또한 거래는 계속 발생하고 있기때문에 비트코인 규모가 커지면 커질수록 &lt;del>(1MB라는 블록크기 제한이 사라지지 않는한)&lt;/del> 수수료가 적은 일반거래는 블록에 등록되기까지 수일이 소모될 것이고 이미 그런 거래가 많이 존재한다.&lt;/p>
+&lt;p>비트코인을 사용할때 해당부분을 염려해 &lt;code>이더리움&lt;/code>이나 &lt;code>라이트코인&lt;/code>같은것들이 생겨났으니 참고하도록 하자.&lt;/p>
+&lt;h3 id="후기">후기&lt;/h3>
+&lt;p>최대한 쉽게 이해하도록 세부적인 내용은 빼고 메인라인만 한번 소개해 보았다.&lt;/p>
+&lt;p>의외로 비트코인의 유명세를 생각할때 한국어로 작성된 비트코인에 대한 원리를 설명한 글은 없고 질문하는 글만 있던데 블로그 방문자 수도 늘릴겸 한번 적어봤다 &lt;del>(데헷!)&lt;/del>&lt;/p>
+&lt;p>개인적으로 생각할때 비트코인은 앞으로 상승세를 기록할 것이다.&lt;/p>
+&lt;p>다만 사용하는 사람이 일상에서의 일반인은 아닐것으로 예상한다.&lt;/p>
+&lt;p>좀더 규모가 큰, &lt;strong>전자제품 구매&lt;/strong>정도에서 대폭 활성화 되고 식당이나 마트같은데서 결제하는건 카드나 현금이 계속 이어가지 않을까? 생각한다.&lt;/p>
+&lt;p>그 이유는 비트코인이 처리 가능한 거래량 때문이다. 비트코인은 10분에 2000건이 한계이고 그에대한 수수료로 500원정도 가져간다. 식당에서 1만원어치 먹고 500원 수수료내고 다음날 거래가 인정되는건 상식적으로 좀 아니다.&lt;/p>
+&lt;p>반면 30만원짜리 핸드폰을 해외 직구로 구매한다 생각해보자. 수수료는 500원. 어딘가의 Visa가 1%수수료로 때가고 환전 수수료때문에 1% 또 붙는거 생각하면 수수료가 대충 6,000원이다. 대충 이쯤부터 비트코인을 사용하는게 나라별 비트코인 가격 차이가 있음을 고려해도 훨씬 더 이득인 상황이 되는 것이다.&lt;/p>
+&lt;p>거래 규모가 커지면 커질수록 %로 돈을 때먹는 현 시스템과는 다르게 비트코인은 받아가는 금액이 거의 일정하며 익명성이 보장되며 물리적거리, 국가적 제약을 받지 않는다.&lt;/p>
+&lt;p>이는 전자화폐의 큰 강점이며 아마 10년뒤쯤엔 우리나라에서 해외직구의 10%정도를 비트코인으로 아니면 그를 대체하는 전자화폐로 하지않을까? 생각한다.&lt;/p>
+&lt;h3 id="후기2">후기2&lt;/h3>
+&lt;p>기술적인 얘기로서의 비트코인은 개인적으로 별로 흥미로운 대상은 아니다.&lt;/p>
+&lt;p>물론 잘 안나오는 Hash값을 구하게 하는 노력을 보안체제로 이어가는 아이디어는 흥미롭지만 솔직히 전력낭비가 너무 크며, 같은원리를 사용하는 다른 블록체인 네트워크는 비트코인의 존재때문에 너무 취약해진다는 단점이 있다.&lt;/p>
+&lt;p>&lt;del>(비트코인 채굴자가 마음만먹으면 다른 블록체인들 다 점령할 수 있음&amp;hellip;&amp;hellip;)&lt;/del>&lt;/p>
+&lt;p>또한 머클트리, Hash를 통한 인증, 비중앙집권적인 시스템은 &lt;code>BitTorrent&lt;/code>의 아이디어와 매우 흡사하다.&lt;/p>
+&lt;p>개인의 거래를 인증하는 부분~~(스크립트)~~은 개인적인 취향에 맞지 않고 해보진 않았지만 네트워크의 아주 일부분은 확률적으로 보안에 취약하다 생각이 되며 ~~(타원곡선관련)~~ 실제로 아무도 시도를 안해서 그렇지 &lt;code>거래거부&lt;/code>의 문제는 여전히 남아있다.&lt;/p>
+&lt;pre>&lt;code>거래거부: 말그대로 채굴자가 거래를 거부해 성립이 안되는것. A가 B에게 송금하는걸 보여주고 B는 거래내역을 받아 가계약으로 거래는 됬지만 채굴노드에서 거래를 인정하지 않아서 거래가 성립안되게 해 물건가지고 튈수 있음. 중국의 채굴성능이 50%를 넘어가는 현 상황에서 이 일은 충분히 발생할 가능성이 있음.
+&lt;/code>&lt;/pre>
+&lt;p>마지막으로 90GB를 넘어가고 앞으로도 늘어만 나고 줄어들가능성은 전무한 거대한 블록체인은 정말 마음에 안든다. 개인적으로 익명에서 익명으로 거래를 하는 비트코인 구조에서 모든 Full노드가 모든 거래기록을 가지고 있을 필요가 있나? 싶다.&lt;/p>
+&lt;p>&lt;del>(중앙집권과 비중앙집권의 하이브리드가 개인적인 취향)&lt;/del>&lt;/p>
+&lt;p>그럼에도 불구하고 비트코인은 현재 가장 성공한 전자화폐이자 암호화폐이며 그 가치가 (변동이 심하긴하지만) 제대로 인정받고 있다.&lt;/p>
+&lt;p>앞으로 많은 변화가 필요하다 생각하지만 일단 비트코인은 세상을 한번 뒤흔들었으며, 그 비트코인에 의해 나는 이쪽분야를 생각하게되고 이 글을 쓰고있다는 사실은 부정 못한다.&lt;/p>
+&lt;p>덤으로 제 비트코인주소는 &lt;code>18B4dAXCbz5VE3dX87icBkDHZ36WbT4mgF&lt;/code>&lt;/p>
+&lt;p>&lt;img src="./----.png" alt="" />&lt;/p>
+&lt;h3 id="후기-4">후기 4&lt;/h3>
+&lt;p>&lt;a class="link" href="https://git.iwanhae.ga/wan/introduction_of_bitcoin" target="_blank" rel="noopener"
+>링크&lt;/a>&lt;/p>
+&lt;p>여기 적혀있는 내용은 간략히~~(대충)~~ 적힌 내용이고 위 링크에서 비트코인에 대하여 더욱 자세히 알아보실 수 있습니다!&lt;/p>
+&lt;p>궁금한 사항은 댓글로 남겨주세요.&lt;/p>
+&lt;p>**이 글은 2017년 7월 04일 마지막으로 수정되었습니다. **&lt;/p>
+&lt;section class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1" role="doc-endnote">
+&lt;p>2017년기준 현재 버전2가 사용되고있음) &lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2" role="doc-endnote">
+&lt;p>뒤에 설명 나옴 (혹은 그럴 예정) &lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3" role="doc-endnote">
+&lt;p>유닉스 TimeStamp사용 &lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/section></description></item><item><title>Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort</title><link>https://iwanhae.github.io/p/bitonic-sort_batchers-oddeven-mergesort/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/bitonic-sort_batchers-oddeven-mergesort/</guid><description>&lt;img src="https://iwanhae.github.io/p/bitonic-sort_batchers-oddeven-mergesort/843px-BitonicSort1.svg.png" alt="Featured image of post Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>정렬알고리즘 뭐가좋아요? 라고 물어본다면&lt;/p>
+&lt;p>뭐 데이터 개수나 컴퓨터 성능의 제약등 이것저것 따져봐야할께 많이 있기는 하지만 일반적으로 Quick Sort면 대충 해결된다.&lt;/p>
+&lt;p>하지만, 시대는 더이상 **&amp;ldquo;단일 스레드를 빠르게!!&amp;quot;**가 아닌 **&amp;ldquo;엄청 많은 스레드를 같이!!&amp;quot;**의 시대로 변해버렸다.&lt;/p>
+&lt;p>요즘 대표적인 예가 GPGPU를 활용한 머신러닝 근사값찾기 노가다다.&lt;/p>
+&lt;p>뭐 그런거 요즘 생각하면서 심심풀이로 CUDA라이브러리 뒤적뒤적하다보니 OpenCL이 튀어나오고 OpenCL뒤적뒤적하다보니 Boost가 튀어나오는데 이놈 뒤적뒤적하다보니&amp;hellip;&amp;hellip;.&lt;/p>
+&lt;p>음? GPU써서 정렬했는데 훨씬 빠르다고?&lt;del>그전에 GPU써서 정렬이 가능해? 항상 Matrix계산만 시켰는데?&lt;/del>&lt;/p>
+&lt;p>그거 생각하고 또 뒤적뒤적하다보니 찾아낸게 &lt;strong>Bitonic Sort&lt;/strong>와 &lt;strong>oddeven mergesort&lt;/strong> 이다.&lt;/p>
+&lt;h2 id="간단-소개">간단 소개&lt;/h2>
+&lt;p>둘다 같은사람이 만들었고, 둘다 &lt;strong>시간복잡도&lt;/strong>가 **Olog^2(n)**로 QuickSort가 평균 &lt;strong>Onlogn&lt;/strong>인거 생각하면 무척 빠른편에 속한다.&lt;/p>
+&lt;p>&lt;del>(헌데 oddeven mergesort쪽이 Bitonic Sort에 비해 연산량이 더 적다. 데이터 수에따라 다르지만 보통 5-20%정도 더 적다. 데이터가 커질수록 둘이 별 차이 없어지지만)&lt;/del>&lt;/p>
+&lt;p>근데 왜 덜유명하냐면 &lt;strong>공간복잡도&lt;/strong>가 **Onlog^2(n)**로 큰편에 속한다.&lt;/p>
+&lt;p>하지만 병렬화가 무척이나 쉬운편에 속해서 멀티코어는 물론이요 GPU에도 써먹을수 있을정도라서 GPGPU분야에서 입문쯤에 존재하는 알고리즘이다.&lt;/p>
+&lt;p>참고로 이놈들은 &lt;strong>Sorter&lt;/strong>나 &lt;strong>Sorting Network&lt;/strong>라는 표현으로도 불리는데 그 이유가 &lt;strong>Quick Sort&lt;/strong>처럼 데이터에따라 pivot이 달라지고 어떤 배열에서 몇번째데이터랑 몇번째데이타랑 비교할지가 바뀌는게 아니라 &lt;strong>데이터에 상관없이&lt;/strong> 항상 몇번째 데이터랑 몇번째 데이터랑 비교할지 이미 정해져 있어서 그렇다고 한다.&lt;/p>
+&lt;h2 id="bitonic-sort">Bitonic Sort&lt;/h2>
+&lt;p>일단 코드부터 (C#)&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="k">class&lt;/span> &lt;span class="nc">Program&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//실제 데이터
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="k">static&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">//변하는거 표시용 (안중요)
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Main&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">args&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">a&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">9&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">8&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">7&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">2&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">16&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">13&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">14&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">15&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">11&lt;/span> &lt;span class="p">,&lt;/span>&lt;span class="m">12&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;span class="n">b&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">9&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">8&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">7&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">16&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">13&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">14&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">15&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">11&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">12&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;span class="n">print&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="n">BitonicSort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Length&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">true&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">BitonicSort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">start&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">m&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">n&lt;/span> &lt;span class="p">/&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">BitonicSort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">start&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">true&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//앞에 반쪽 오름차순 정렬
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">BitonicSort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">start&lt;/span>&lt;span class="p">+&lt;/span>&lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">false&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//뒤에 반쪽 내림차순 정렬
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="cm">/*
+&lt;/span>&lt;span class="cm"> 결과적으로
+&lt;/span>&lt;span class="cm"> ↗↘
+&lt;/span>&lt;span class="cm"> ↗ ↘
+&lt;/span>&lt;span class="cm"> 이런모양이 완성됨.
+&lt;/span>&lt;span class="cm"> */&lt;/span>
+&lt;span class="n">BitonicMerge&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">start&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//합치기
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">BitonicMerge&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">start&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">m&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">n&lt;/span> &lt;span class="p">/&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="k">for&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">start&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="n">start&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">++)&lt;/span>
+&lt;span class="n">compare&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="c1">//이렇게 함으로써 앞에반쪽의 모든성분은
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="c1">//뒤에 반쪽의 성분보다 작게됨.
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="cm">/*
+&lt;/span>&lt;span class="cm"> 결과적으로
+&lt;/span>&lt;span class="cm"> ↗↘ ↘ ↗
+&lt;/span>&lt;span class="cm"> ↗ ↘ 혹은 ↘↗
+&lt;/span>&lt;span class="cm"> 이랬던게
+&lt;/span>&lt;span class="cm"> ↘↗
+&lt;/span>&lt;span class="cm"> ↗↘||||
+&lt;/span>&lt;span class="cm"> 이런모양으로 됨.
+&lt;/span>&lt;span class="cm"> */&lt;/span>
+&lt;span class="n">BitonicMerge&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">start&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//앞의 반쪽 계속 Merge
+&lt;/span>&lt;span class="c1">&lt;/span> &lt;span class="n">BitonicMerge&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">start&lt;/span>&lt;span class="p">+&lt;/span>&lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">//뒤의 반쪽 계속 Merge
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">compare&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">j&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">isAscending&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">isAscending&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">]))&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">exchange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">j&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">print&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">exchange&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">j&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">t&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">j&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">t&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">print&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">for&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Length&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">++)&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">])&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Write&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="s">&amp;#34;*\t&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="k">else&lt;/span>
+&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Write&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">i&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="s">&amp;#34;\t&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>성분이 2^n 개가 아니라면 좀 상황이 미묘해진다는점 빼고 심플(?)한 코드이다.&lt;/p>
+&lt;p>좀 생각해보면 알 수 있다싶이 데이터의 성분에 상관없이 항상 비교하는 대상이 정해져있어서 다음과 같은 그림으로도 표현된다.&lt;/p>
+&lt;p>&lt;img src="./843px-BitonicSort1.svg.png" alt="" />&lt;/p>
+&lt;p>(&lt;a class="link" href="https://en.wikipedia.org/wiki/Bitonic_sorter" target="_blank" rel="noopener"
+>위키피디아&lt;/a>에서 가져옴)&lt;/p>
+&lt;p>그리고 이렇게 &lt;strong>data-independent&lt;/strong> ~~(한국어로 뭐라할지 미묘&amp;hellip;..)~~&lt;del>데이터 독립적? 멋없어&amp;hellip;.&lt;/del> 하다보니깐&lt;/p>
+&lt;p>작업분배가 편하고 거의 모든과정이 병렬화가 가능해서 &lt;del>(Sync과정이 꽤 필요하긴 하지만)&lt;/del>&lt;/p>
+&lt;p>GPGPU, 즉 GPU를 활용해서 정렬하는것이 가능하다.&lt;del>(데이터수가 1024^2개가 넘어가면 CPU보다 눈에띄게 빠르다고 한다.)&lt;/del>&lt;/p>
+&lt;p>(보통 batcher&amp;rsquo;s oddeven mergesort 를 더 많이 쓴다는듯 하다.)&lt;/p>
+&lt;h2 id="batchers-oddeven-mergesort">batcher&amp;rsquo;s oddeven mergesort&lt;/h2>
+&lt;p>작성중&amp;hellip;.&lt;/p>
+&lt;p>-&amp;gt; 작성예정 없음&lt;/p></description></item><item><title>Systemd를 이용한 rc.local활성화 (우분투 16.10)</title><link>https://iwanhae.github.io/p/rc-local_systemd/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/rc-local_systemd/</guid><description>&lt;img src="https://iwanhae.github.io/p/rc-local_systemd/I0KhR2h.png" alt="Featured image of post Systemd를 이용한 rc.local활성화 (우분투 16.10)" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>좀 전부터 systemd가 흥하다 싶더니 순식간에 레드헷계열은 물론이요 데비안도 전부 systemd를 사용하게 되었습니다.&lt;/p>
+&lt;p>&lt;a class="link" href="http://www.zdnet.com/article/linus-torvalds-and-others-on-linuxs-systemd/" target="_blank" rel="noopener"
+>Systmed란?(ZDnet기사)&lt;/a>&lt;/p>
+&lt;p>사실 전 이런거에 별로 익숙치 않아서 여태껏 별로 신경쓰지 않고 기존 시스템을 사용해 왔는데&amp;hellip;&amp;hellip;. 얼마전 서버를 아폴로 레이크로 바꾸니깐 커널이 4.8부터 지원하고(&amp;hellip;) 그거 되는 서버가 우분투 16.10밖에 없고(&amp;hellip;) 우분투 16.10은 완벽하게 systemd사용하고 있고(&amp;hellip;)&lt;/p>
+&lt;p>근데 그 무엇보다&amp;hellip;.. RC.LOCAL이 비활성화가 기본이더군요&amp;hellip;..&lt;/p>
+&lt;p>뭐 솔직히 systemd가 좋긴 좋아요. 로깅도 자동으로 되고, 꺼져도 알아서 다시 켜지게 할 수도 있고, 예약도 훨씬더 편하게 설정해 놓을수 있고, 의존성 문제 해결도 쉬워요.&lt;/p>
+&lt;p>하지만 이건 상용이 아닌 개인용 서버. 서비스 등록해 놓는게 귀찮은 프로세서가 더 많다는게 함정. 그리고 이럴땐 rc.local이 최고!&lt;/p>
+&lt;p>란 느낌으로 고생고생해서 rc.local 활성화 시켜놓은 기록 남겨둡니다.&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>일단 결론부터 말하면 rc.local이 적용되있지는 않지만 사라진건 아닙니다. 비활성화된 상태일 뿐이죠.&lt;/p>
+&lt;p>그럼 활성화 시켜봅시다&amp;hellip;&amp;hellip;.&lt;/p>
+&lt;p>&lt;code>sudo systemctl enable rc-local.service&lt;/code>&lt;/p>
+&lt;p>근데&amp;hellip;. 음&amp;hellip;.?
+&lt;img src="./I0KhR2h.png" alt="" />&lt;/p>
+&lt;p>하하하! 안되네욤(쩝&amp;hellip;) &lt;del>(사진은 적당히 퍼온거)&lt;/del>&lt;/p>
+&lt;p>우분투 16.10에서 위 명령어 실행시키면 서비스 등록시키는 파일 &lt;code>rc-local.service&lt;/code>이 16.04기준으로 작성되었기 때문에(?) 제대로 작동 안됩니다.&lt;/p>
+&lt;p>그럼 이 파일을 제대로 작동되게 해봅시다. rc-local.service은 다음 위치에 존재합니다.&lt;/p>
+&lt;pre>&lt;code>/lib/systemd/sytem/rc-local.service
+&lt;/code>&lt;/pre>
+&lt;p>이 파일내용을 보면&lt;/p>
+&lt;pre>&lt;code># This file is part of systemd.
+#
+# systemd is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License, or
+# (at your option) any later version.
+# This unit gets pulled automatically into multi-user.target by
+# systemd-rc-local-generator if /etc/rc.local is executable.
+[Unit]
+Description=/etc/rc.local Compatibility
+ConditionFileIsExecutable=/etc/rc.local
+After=network.target
+[Service]
+Type=forking
+ExecStart=/etc/rc.local start
+TimeoutSec=0
+RemainAfterExit=yes
+GuessMainPID=no
+&lt;/code>&lt;/pre>
+&lt;p>이런 느낌으로 되어있는데 위 오류메세지를 보면 알수 있다싶이 &lt;code>[Install]&lt;/code>부분이 없어서 제대로 작동 못시키겠다고 하니, 추가시켜 줍시다.&lt;/p>
+&lt;pre>&lt;code>[Install]
+WantedBy=multi-user.target
+&lt;/code>&lt;/pre>
+&lt;p>(자세한 의미는 &lt;a class="link" href="https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files" target="_blank" rel="noopener"
+>여기&lt;/a>참조)&lt;/p>
+&lt;p>그 후 &lt;code>sudo systemctl enable rc-local.service&lt;/code> 해주면 제대로 rc.local서비스가 활성화 됩니다.&lt;/p>
+&lt;p>이제 하던데로 &lt;code>/etc/rc.local&lt;/code>파일 작성해서 사용해 주면 됩니다. (실행권한주는거 잊지 마세요~)&lt;/p></description></item><item><title>뒤에서 부터 보는 C언어: 1. 기본적인것들</title><link>https://iwanhae.github.io/p/clang_from_backward_1/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/clang_from_backward_1/</guid><description>&lt;img src="https://iwanhae.github.io/p/clang_from_backward_1/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 1. 기본적인것들" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>C언어는 아무도 이의를 제기할 수 없을정도로 장수한 프로그래밍 언어중 가장 인기가 높은 언어이다. 그리고 또한 C언어를 프로그래밍 언어의 입문으로 생각하여 처음 접하는 언어로 C언어를 택하는 사람도 많다고 생각된다.&lt;/p>
+&lt;p>하지만 이러한 현실 속에서 실질적으로 C언어에대한 책이나 강의를 보면 하나같이 다 똑같다.&lt;/p>
+&lt;blockquote>
+&lt;p>printf(&amp;ldquo;뭔가 이상한 %나 &amp;amp;가 섞여있는 문자열&amp;rdquo;, 변수여러개);&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>요렇게 치면 놀랍게도 까만색창에 문자가 떠여~!!!! 와 박수~!&lt;/p>
+&lt;/blockquote>
+&lt;p>필자는 Visual Basic으로 프로그래밍을 입문해서 그런지, 이러한 가르켜주는 방식은 발전 가능성도 없으며 &lt;del>(솔직히 이것만보고 운영체제에서 지정해준 버퍼에 내용을 쓰면 운영체제가 하나하나 읽어가며 화면에 표시해준다는걸 누가 알겠는가?)&lt;/del> 매우 비효율적이라 생각된다.&lt;/p>
+&lt;p>그래서 그냥 자기만족용으로 써본다.&lt;/p>
+&lt;p>이 글의 추천독자는 뭔가 위와같은걸 해봤지만 정작 어떻게 그게 실현되는지는 모르는 고런 사람들이니 참고 바란다.&lt;/p>
+&lt;h2 id="왜-c언어인가">왜 C언어인가?&lt;/h2>
+&lt;p>C언어는 꽤나 가볍고 꽤나 Low Level&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>을 다루기 쉬워서 오늘날에도 많이 쓰인다. 하지만 교육용으로 좋은언어인가? 라고 물으면 경쟁자가 꽤 많다.&lt;/p>
+&lt;p>대표적으로 프로그래밍 개념만 배우려한다면 스크래치나 Phyton만 배워도 충분하고 실용성을 따지자면 솔직히 Java를 따라올 언어가 없다. 이러한 생각을 반영했는지 실제로 요즘 해외 몇몇대학을 보면 프로그래밍 입문으로 C언어 대신 Java나 Phyton만 쓰는 학교도 꽤 있다는 모양이다.&lt;/p>
+&lt;p>하지만 다음 두가지를 생각해볼때 C언어가 처음배우는 언어로 적합한지는 둘째치고 알아두어야 언어임에는 틀림없어 보인다.&lt;/p>
+&lt;p>첫째는 모든 언어가 C언어에서 영감을 받았다는 것이다. 대표적으로 &lt;code>==&lt;/code>이나 &lt;code>!=&lt;/code> 부터 시작해서 &lt;code>{&lt;/code> &lt;code>}&lt;/code>같은 중괄호 스타일 &lt;code>static int SomeFunc(int A, char B){}&lt;/code>같은 함수 선언양식까지 모두 C언어에서 영감을 받은 것들이고 C언어만 배워두면 다른 언어배울때 기본적인 구조가 같기에 배우기 훨씬 수월하다. &lt;del>(근데 이건 C#배워도 된다는게 함정)&lt;/del>&lt;/p>
+&lt;p>둘째는 실제 컴퓨터가 어떻게 연산을 수행하는지 알수있는 언어중 가장 쉬운 언어라는 것이다. 우리가 &lt;code>int a[100];&lt;/code>이라는 배열을 선언하면 컴퓨터는 메모리상에 어떻게 저장하고 어떻게 그 위치를 알아내며 어떻게 그 위치를 사용하는지 생각해본적 있는가? 물론 요즘나온 언어들은 우리가 그런거 신경쓸 필요 없이 &lt;strong>다 알아서 해준다.&lt;/strong> 하지만 알고 프로그래밍하는것고 모르고 하는것, 이 둘 사이에는 분명한 차이가 존재한다. 그리고 어차피 요즘나온 언어가 다 처리해 준다고는 하지만 파일 읽기나 쓰기, 소켓통신같이 조금만 심화되게 들어가면 이부분을 모르면 되게 코드가 비 효율적이게 된다.&lt;/p>
+&lt;p>그러니 C언어 배울때 불평하지 말고 &lt;strong>한번쯤은&lt;/strong> 해두는 것이 좋다.&lt;/p>
+&lt;h2 id="c언어의-모토">C언어의 모토&lt;/h2>
+&lt;p>는 &amp;ldquo;프로그래머를 믿으라!&amp;ldquo;이다&amp;hellip;&amp;hellip;.&lt;/p>
+&lt;p>즉, &lt;strong>&amp;ldquo;난 이 모든 기능들을 지원하지만 이것들 조금만 잘못써도 버그 엄청나게 남. 하지만 난 널 믿으니깐 알아서 짤 쓸수 있을꺼라고 믿어!&amp;quot;&lt;/strong> 이런 느낌이다.&lt;/p>
+&lt;p>물론 모토가 이것일뿐 그것을 실현하는 &lt;strong>컴파일러&lt;/strong>, 대표적으로 Microsoft C++ Compiler의 경우 프로그래머를 &lt;strong>못&lt;/strong>믿어서(;;) 표준안을 무시하고 여러가지 함수를 변경한걸로 유명하다.&lt;/p>
+&lt;p>이에대한 반응은 자기 취향따라 달라지는듯 하다.&lt;/p>
+&lt;h2 id="무엇으로-배워야-하는가">무엇으로 배워야 하는가?&lt;/h2>
+&lt;p>사실 C언어에 표준안이 존재하긴 하지만 &lt;del>(ANSI C가 초기버전, C11이 가장 최근꺼)&lt;/del> 현실적으로 C라는 언어 자체에 의미를 부여하는것은 컴파일러&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>이고 각 컴파일러들은 각자의 사정에 맞춰서 다들 제멋대로 만들기때문에 좀 심하게 말하자면 컴파일러에따라 그냥 다른 언어라고 불러도 될 정도이다.&lt;/p>
+&lt;p>그럼 이렇게 그냥 다른언어라도 봐도 될꺼같다는 말이나올정도로 컴파일러에 따라 언어의 성격이 바뀌는데 어떤 컴파일러를 사용해야할까?&lt;/p>
+&lt;p>일단 보통 접하는 유명한 컴파일러는 Intel® C++ Compilers, GCC, Microsoft C++ Compiler, LLVM/Clang 등이 있다.&lt;/p>
+&lt;p>차례대로 간략히 설명하자면&lt;/p>
+&lt;ol>
+&lt;li>Intel® C++ Compilers: 엄청난 최적화로 유명하다. Intel CPU로 돌아가는 컴퓨터 한정으로 코드가 자동으로 병렬화되서 CPU의 한계를 최대한 이끌어 낸다. 보통 슈퍼컴퓨터에서 돌릴 프로그램 작성할때 많이 쓰인다.&lt;/li>
+&lt;li>GCC: 리눅스에서 주로 쓰인다. &lt;del>(같은 재단GNU에서 만듬)&lt;/del> 위 넷중 표준을 가장 잘 지키고 가장 많이 쓰인다. 리눅스 컴파일할때도 주로 이놈을 사용한다. &lt;del>(리눅스에서 리눅스 컴파일 하는데 GCC를 쓴다. 음?)(닭이먼저 달걀이 먼저?)&lt;/del> 윈도용으로 포팅해놓은것도 있다. Dev-C++가 GCC를 컴파일러로 사용한다.&lt;/li>
+&lt;li>Microsoft C++ Compiler: &lt;del>(개발자를 못믿어서)&lt;/del> 표준따위 안드로메다로 날라갔다. 하지만 비주얼스튜디오 설치하면 같이 날라와서 쉽게 접할 수 있다.&lt;/li>
+&lt;li>LLVM/Clang: Apple에서 밀어주는 컴파일 방식이다. 정확히는 Clang이 C언어를 기계어가 아닌 중간단계의 언어로 바꿔주고 LLVM이 그 중간단계의 언어를 기계어로 바꿔주는 방식이다. 이렇게 함으로써 컴파일러개발자는 컴파일러 개발자대로 하나만 포팅하면 여러언어를 한번에 지원하고, 언어개발자는 언어개발자대로 하나만 포팅하면 여러 기기를 한번에 지원하는 컴파일러를 만들어보자는 것이 LLVM이다.&lt;/li>
+&lt;/ol>
+&lt;p>이중에서 개인적으로 추천하는건 GCC이다. 이유는 표준을 가장 잘 지켰고, 업데이트가 되어도 크게 변하지 않고, 문제점이 생겼을때 질문할 커뮤니티 규모가 가장 크기 때문이다. 하지만 리눅스를 처음 다루는사람은 GCC사용하기가 어려울테니 윈도우용으로 포팅된 &lt;a class="link" href="https://www.google.co.kr/?gfe_rd=cr&amp;amp;ei=zq1aWI_eC-3d8Ae7mKe4Aw&amp;amp;gws_rd=ssl#q=GCC&amp;#43;for&amp;#43;windows" target="_blank" rel="noopener"
+>GCC&lt;/a>를 사용하거나 그냥 비쥬얼스튜디오 사용하는것도 나쁘지 않다.&lt;/p>
+&lt;section class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1" role="doc-endnote">
+&lt;p>아두이노에 LED깜빡이는, 공유기가 인터넷 공유해주는 정도의 수준을 의미함 &lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2" role="doc-endnote">
+&lt;p>영어를 분석해서 기계어로 바꿔주는놈 &lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/section></description></item><item><title>뒤에서 부터 보는 C언어: 2. 변수</title><link>https://iwanhae.github.io/p/clang_from_backward_2/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/clang_from_backward_2/</guid><description>&lt;img src="https://iwanhae.github.io/p/clang_from_backward_2/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 2. 변수" />&lt;h2 id="변수란-무엇인가">변수란 무엇인가?&lt;/h2>
+&lt;p>변수, 영어로는 Variable, Vary(달라지다) + able(가능하다)&lt;/p>
+&lt;p>뭐 대충 한번쯤 써본적은 있을테니 알꺼라 믿지만 &lt;del>(컴퓨터 아니라도 수학에서 허구한날 쓰니깐)&lt;/del> 그래도 고전적이게 한번 써보자면 이것은 그릇이다.&lt;/p>
+&lt;p>그릇 안에는 0과 1의 조합이 들어있고 그릇에는 그릇 고유의 이름과 그릇의 특성이 있는데 이름은 사용자가 맘대로 정하는거고 그릇의 특성에따라 컴퓨터가 해석하는 방법이 달라진다.&lt;/p>
+&lt;p>만약 char 특성이면 문자~~(사실 1바이트 숫자지만)~~, INT 특성이면 정수, Float 특성이면 실수, Bool 특성이면 True,False ~~헌데 C언어는 Bool없다&amp;hellip;.. _Bool은 GCC에선 있다.)~~&lt;/p>
+&lt;p>뭐 이런 느낌이다.&lt;/p>
+&lt;p>어떤식으로 저장되는지는 IEEE문서 어딘가쯤에 적혀있을테니 궁금하면 찾아보도록 하자.&lt;/p>
+&lt;p>여기서 재미난점은 말했다싶이 &lt;strong>그릇&lt;/strong> 속에는 &lt;strong>0&lt;/strong>과 &lt;strong>1&lt;/strong>이 저장되어있다. 나중에 언급은 하겠지만 (아마도?) 여기서 포인터를 쓰면 특성만 바꾼체로 어떤 그릇속에 있는 정보를 읽어낼 수 있는데 이거 잘 활용하면 Byte(Char)로 저장된 내용을 다른방식으로 읽어내 의미를 보여준다던가 &lt;del>(IP주소 표기할때 가끔씀)&lt;/del> Double이나 INT 혹은 다른 저장방식으로 의미를 갖는것을 Byte(Char) 방식으로 읽어내 일반화된 방법으로 압축을 행할수도 있다.&lt;/p>
+&lt;h2 id="c언어에서-사용가능한-변수의-종류는">C언어에서 사용가능한 변수의 종류는?&lt;/h2>
+&lt;p>꽤 많다.&lt;/p>
+&lt;p>표로 정리해뒀으니 한번 보고 지나가면 된다.&lt;/p>
+&lt;p>꼭 알아둘것은&lt;/p>
+&lt;p>Char, Int, Float, Struct, 포인터, 함수포인터&lt;/p>
+&lt;p>정도만 기억해두면 된다. (나머지는 필요할때 찾아서 보면 됨)&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>형식&lt;/th>
+&lt;th>설명&lt;/th>
+&lt;th>포맷&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>char&lt;/td>
+&lt;td>보통 1바이트짜리 크기를 가지며 &lt;del>(컴파일러에 따라 8비트가 아니라 7비트인 경우도 있다.)&lt;/del> 포인터가 가르키는게 가능한 최소 단위이다. 원래는 메모리공간 하나 다루는데 썼는데 아스키코드도 마침 딱 1바이트크기라 요즘은 문자표현할때 더 자주 쓰인다.&lt;/td>
+&lt;td>%c&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>signed char&lt;/td>
+&lt;td>부호가 있는 char형. 일반적인 컴파일러에서는 char쓰면 signed char를 의미한다.&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>unsigned char&lt;/td>
+&lt;td>부호가 없는 char형. 대표적으로 ARM컴파일러에서는 char쓰면 unsigned char를 의미한다.&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>short / short int / signed short / signed short int&lt;/td>
+&lt;td>최소 2바이트의 크기를 가지는 +-가 존재하는 정수형이다. 컴파일러에따라 더 클수도 있으나 아직까지 그런 컴파일러를 본적은 없다.&lt;/td>
+&lt;td>%hi / %hd&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>unsigned short / unsigned short int&lt;/td>
+&lt;td>부호가 없을뿐 똑같다&lt;/td>
+&lt;td>%hu&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>int&lt;/td>
+&lt;td>최소 4바이트의 크기를 가지는 정수&lt;/td>
+&lt;td>%i / %d&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>unsigned int&lt;/td>
+&lt;td>부호가 없는 int형&lt;/td>
+&lt;td>%u&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>long int&lt;/td>
+&lt;td>최소 8바이트 정수&lt;/td>
+&lt;td>%li / %ld&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>long long int&lt;/td>
+&lt;td>최소 16바이트 정수&lt;/td>
+&lt;td>%lli / %lld&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>float / double long double&lt;/td>
+&lt;td>실수를 표현한다. 하지만 그 크기가 정의되있지는 않다. 일반적으로 float가 4바이트고 double이 8바이트이고 long double은 컴파일러마다 따로논다.&lt;/td>
+&lt;td>%f / %g / %e&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>struct&lt;/td>
+&lt;td>위에 나온 자료형들을 조합해서 사용자가 새로 만들수 있는 자료형이다. 한글로 번역하면 구조체&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>array&lt;/td>
+&lt;td>배열&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>포인터&lt;/td>
+&lt;td>메모리 상에서 위에 나온 모든 자료형의 시작부분을 가르키는 데이터를 가진다. 포인터 형식에 따라 그 시작부분부터 몇바이트씩 읽어서 어떤식으로 해석할지 결정한다.&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>함수 포인터&lt;/td>
+&lt;td>메모리 상에서 어떠한 함수가 저장되어있는 부분의 시작점을 가르킨다. 동적 라이브러리를 읽어오거나 사용자 설정에따라 다른함수를 사용해야할때 자주 쓰인다.&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>참고로 포인터의 경우 x86환경에서 (즉, 윈도우가 돌아가면)&lt;/p>
+&lt;p>32bit 컴퓨터에서는 4바이트(=32비트) 64비트 컴퓨터에서는 6바이트(=48비트)의 크기를 가진다.&lt;/p>
+&lt;p>덤으로 왜 64비트 컴퓨터에서 포인터의 크기가 64비트(=8바이트)가 아니냐면&lt;/p>
+&lt;p>64비트크기의 포인터로 총&lt;/p>
+&lt;p>$${ 2 }^{ 64 }\quad bytes\quad \approx \quad 16\quad Eb$$&lt;/p>
+&lt;p>크기의 메모리 공간을 가르킬수 있는데 아마 여기까지 메모리가 커질일은 없다고 생각해서(;;)&lt;/p>
+&lt;p>$${ 2 }^{ 48 }\quad bytes\quad \approx \quad 16\quad Tb$$&lt;/p>
+&lt;p>로 합의 봤다나 뭐라나&amp;hellip;. (쓸일도 없는데 포인터 쓸때마다 2byte씩 낭비가 일어난다는 의미니깐)&lt;/p>
+&lt;h2 id="변수는-어떻게-저장되나">변수는 어떻게 저장되나?&lt;/h2>
+&lt;p>일단 C언어는 처음 시작될때 운영체제로부터 &lt;del>(운영체제 그 자체인경우는 할당 방법이 미리 지정되어 있으나 여기선 상관없는 얘기)&lt;/del> 메모리 공간을 할당받아 &lt;code>Code&lt;/code> &lt;code>Data&lt;/code> &lt;code>Stack&lt;/code> &lt;code>Heap&lt;/code> 이렇게 네가지 영역으로 나눈다.&lt;/p>
+&lt;p>&lt;code>Code&lt;/code>의 경우 이름에서 예상할수 있다싶이 컴파일되어 바이너리[^n]형태로 하드에 저장되있는 내용을 그대로 가져와 넣는 영역이다. 일반적으로 코드 전부를 이 영역에 올리지만, 동적으로 Library를 불러올경우 (DLL파일이나 SO파일 같은것들) 처음에는 없었지만 나중에 불러오는 형식을 취한다.&lt;/p>
+&lt;p>&lt;code>Data&lt;/code>의 경우 프로그램 내내 존재해야하는 변수가 저장된다. 대표적으로 Static으로 지정해놓은 변수, 전역변수 지정해 놓은 변수들이 해당된다.&lt;/p>
+&lt;p>&lt;code>Stack&lt;/code>의 경우 함수 내에서 호출되는 지역변수들이 저장되는 곳이다. 자료구조배울때 많이나오는 &lt;code>스택&lt;/code>과 같은 자료구조를 가진다. (지역에서 탈출하면 변수도 사라져야 하는데 이럴때 맨 윗부분만 빼면 되니깐) 흔히 C언어의 문제점으로 언급하는 &amp;ldquo;Stack Overflow&amp;quot;에러도 함수호출(지역출입)이 너무 많아져서 이 공간이 넘칠때 일어나는 애러를 말한다.&lt;/p>
+&lt;p>&lt;code>Heap&lt;/code>이 공간은 동적할당(malloc)에 쓰이는 공간이다. 딱히 그 이상 특별한건 없다. 영어로 &amp;ldquo;아무렇게나 쌓인 더미&amp;quot;를 의미하며 실제 그런식으로 쓰인다. 그냥 잘 지내다가 뜬금없이 아무렇게나 할당받아서 쓰고, 다 쓰고나면 버린다.&lt;/p>
+&lt;p>위 네가지를 코드로 보면 요런 느낌이다.&lt;/p>
+&lt;p>코드 전체는 실행되면서 &lt;code>Code&lt;/code>에 할당&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="cp">#include&lt;/span> &lt;span class="cpf">&amp;lt;stdio.h&amp;gt;&lt;/span>&lt;span class="cp">
+&lt;/span>&lt;span class="cp">&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">funcA&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">funcB&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">A&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// Data 영역에 할당
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">B&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">20&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// Data 에 할당
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="n">Dynamic&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="o">*&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">malloc&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">sizeof&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;span class="c1">//Heap에서 `sizeof(int)`만큼 할당받고 포인터로 가르키기
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">C&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">100&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">//실행되면서 지역변수 C를 Stack에 PUSH
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="n">funcA&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="c1">//끝나면서 POP해서 C를 날려버림
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">funcA&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">D&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">30&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">//지역변수 D를 Stack에 PUSH
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="n">funcB&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">D&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;span class="c1">//끝나면서 POP해서 D를 날려버림
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="kt">void&lt;/span> &lt;span class="nf">funcB&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">D&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">E&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">40&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="c1">//지역변수 E를 Stack에 PUSH
+&lt;/span>&lt;span class="c1">&lt;/span>&lt;span class="p">}&lt;/span>
+&lt;span class="c1">//끝나면서 POP해서 E를 날려버림
+&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="배열은-어떻게-저장되나">배열은 어떻게 저장되나?&lt;/h2>
+&lt;p>배열은 순서대로 저장된다&amp;hellip;&amp;hellip;&lt;del>(어쩌라고&amp;hellip;)&lt;/del>&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="kt">int&lt;/span> &lt;span class="n">Very&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>이라는 배열이 있고&lt;/p>
+&lt;p>&lt;code>Very[0]&lt;/code>가 메모리상에서 1100번지에 있을때&lt;!-- raw HTML omitted -->
+&lt;code>Very[1]&lt;/code>은 메모리상에서 1104번지에 있다.&lt;/p>
+&lt;p>(int형은 4바이트 크기이므로 1100, 1101, 1102, 1103번지는 &lt;code>Very[0]&lt;/code>, 그 후 1104부터 1107까지는 &lt;code>Very[1]&lt;/code>이 차지한다.)&lt;/p>
+&lt;p>여기서 주의해야할 점은 &lt;strong>C언어는 &lt;code>Very&lt;/code>가 몇칸짜리 배열인지 신경 안쓴다&lt;/strong>라는 것이다.&lt;/p>
+&lt;p>무슨말인고 하니 &lt;code>Very[100]=14&lt;/code>를 해도 오류가 안난다.&lt;/p>
+&lt;p>이게 뭐가 문제인지 모르겠는가?&lt;/p>
+&lt;p>다음코드를 보자.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="n">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;%d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">102&lt;/span>&lt;span class="p">]);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>뭐가 출력되어야 한다고 생각하는가?&lt;/p>
+&lt;p>초기화되지 않은값?&lt;/p>
+&lt;p>정답은 10이다. (음?)&lt;/p>
+&lt;p>&lt;img src="./--.PNG" alt="" />&lt;/p>
+&lt;p>정확히는 비쥬얼스튜디오 2015, x86, Debug환경에서 돌렸을때 10이 나온다.
+&lt;del>(컴파일러 환경마다 메모리상에 변수저장방법이 다르다.)&lt;/del>&lt;/p>
+&lt;p>여기서 만약 &lt;code>b[102]=9;&lt;/code>하면 우습게도 &lt;code>a&lt;/code>의 값도 &lt;code>9&lt;/code>가 되버린다.&lt;/p>
+&lt;p>지금이야 변수하나 장난치는것 뿐이지만 뭔가 루프문 돌리다가 제때 루프문 종료를 못해서 &lt;code>b[103234]&lt;/code>같은데까지 변수를 대입하고 그부분이 뭔가 다른프로그램이 이용하는 영역이라던가 운영체제의 중요한 부분이라 생각해보면 정말 끔찍한 사태가 일어나는 것이다.&lt;/p>
+&lt;p>물론 요즘은 운영체제상에서 프로그램은 운영체제가 준 가상의 메모리주소공간에서 노는거기 때문에 실제 그런 불상사는 잘 안일어나지만, 윈도 XP시절 이런 버그가 참 많았다나 뭐라나&amp;hellip;&amp;hellip;&lt;!-- raw HTML omitted -->&lt;del>(다시 말하지만 C언어의 모토는 &lt;strong>프로그래머를 믿으라!!&lt;/strong>)&lt;/del>&lt;/p>
+&lt;p>어찌됬든 여기서 한번 생각해볼만한것이 여기에 &lt;code>포인터&lt;/code>의 개념이 활용되었다는 것이다.&lt;/p>
+&lt;h2 id="포인터">포인터?&lt;/h2>
+&lt;p>뭔가 C언어 최종보스같은 느낌이다.&lt;/p>
+&lt;p>물론 실제로는 이보다 X같은놈들 훨씬 많다. &lt;del>(안다룰꺼지만)&lt;/del>&lt;/p>
+&lt;p>사실 필자는 C#처음 만지작 거렸을때 **어머나 퐌톼스튁! 포인터따위 조까!!**와 같은 느낌으로 포인터 안배우고 지낼려고 했다.&lt;/p>
+&lt;p>하지만 C#좀 하다가 객체속에 저장되있는 임의의 객체를 불러와 정보를 열람한뒤 그것을 상속체가 같은 다른 객체로 옮겼다가 이진화해서 전송했다 받아낸걸 객체로 읽어내 객체를 업데이트한뒤 한번 사용하고 소멸시키는 뭐 이상한걸 하게됬는데&lt;/p>
+&lt;p>&lt;strong>깊은, 얉은 복사&lt;/strong>가 포인터의 개념을 제대로 활용하는놈이라(;;) 반 강제적으로 포인터의 개념을 깨닫게 됬다.&lt;/p>
+&lt;p>포인터라는 것은 생각보다 간단하다.&lt;/p>
+&lt;p>&lt;code>int* ptr&lt;/code>이라는 선언이 있다면&lt;/p>
+&lt;p>4바이트 저장공간(64비트면 6바이트)에 메모리주소를 넣어두는게 전부다.&lt;/p>
+&lt;p>여기서 &lt;code>int&lt;/code>는 자기가 가리키는 영역을 &lt;code>int&lt;/code>형식으로 읽겠다는 것이다.&lt;/p>
+&lt;p>위쪽에 **배열은 어떻게 저장되나?**에서 썼던 1100번지에 존재하는 &lt;code>Very[0]&lt;/code>를 재탕해보면&lt;/p>
+&lt;p>&lt;code>ptr = 1100;&lt;/code>이라 하고 &lt;code>*ptr = 11;&lt;/code>이라 하면&lt;/p>
+&lt;p>1100, 1101, 1102, 1103 번지를 활용해 11이라는 값을 저장하게 되는 것이다.&lt;/p>
+&lt;p>물론 실제로 &lt;code>ptr = 1100;&lt;/code>이라고 쓰는경우는 하드웨어 제어하는경우를 제외하면 거의 없고 &lt;del>(라즈베리파이 GPIO 맘대로 조작할때쯤 DataSheet보면서 이런거 맘껏 하게된다)&lt;/del>&lt;/p>
+&lt;p>&lt;code>ptr = &amp;amp;Very&lt;/code> 요런 느낌으로 주소를 지정해 준다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">Very&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="kt">int&lt;/span>&lt;span class="o">*&lt;/span> &lt;span class="n">ptr&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">ptr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="n">Very&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="o">*&lt;/span>&lt;span class="n">ptr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">100&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;%d&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Very&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">]);&lt;/span> &lt;span class="c1">//100
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="o">*&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="o">++&lt;/span>&lt;span class="n">ptr&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">99&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;%d&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Very&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">]);&lt;/span> &lt;span class="c1">//99
+&lt;/span>&lt;span class="c1">&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="포인터와-배열">포인터와 배열&lt;/h2>
+&lt;p>중요한건 아닐지도 모르지만 한번 언급해본다.&lt;/p>
+&lt;p>배열과 포인터는 반정도 그 개념을 공유한다.&lt;/p>
+&lt;p>예를들면 위에 보여줬던&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-c++" data-lang="c++">&lt;span class="kt">int&lt;/span> &lt;span class="nf">main&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;span class="p">{&lt;/span>
+&lt;span class="kt">int&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;span class="n">a&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">10&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="n">printf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;%d&lt;/span>&lt;span class="se">\n&lt;/span>&lt;span class="s">&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">b&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">102&lt;/span>&lt;span class="p">]);&lt;/span>
+&lt;span class="k">return&lt;/span> &lt;span class="mi">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;span class="p">}&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>이부분 같은거 말이다.&lt;/p>
+&lt;p>&lt;code>int b[100];&lt;/code>부분에서 &lt;code>[]&lt;/code>부분은 확실히 배열로써 사용된 부분이다.
+이는 컴퓨터에게 int형 100칸짜리 메모리 공간(400바이트)을 확보하라는 명령이다.&lt;/p>
+&lt;p>하지만 &lt;code>b[102]&lt;/code>는 포인터다. 정확히는 &lt;code>b&lt;/code>가 &lt;code>int* b&lt;/code>이다.&lt;/p>
+&lt;p>즉 위의 &lt;code>int b[100];&lt;/code>은&lt;!-- raw HTML omitted -->
+메모리공간을 확보하고, &lt;!-- raw HTML omitted -->b라는 포인터를 만들어낸뒤, &lt;!-- raw HTML omitted -->b의 값에 확보한 공간의 첫번째 칸의 위치정보를 집어 넣어라.&lt;/p>
+&lt;p>라는 세가지 명령을 수행하는 선언문인 것이다.&lt;/p>
+&lt;p>우리가 &lt;code>b[102]&lt;/code>라고 쓰는건 C언어 내부에서 &lt;code>*(b + 102);&lt;/code>와 동치이니 참고하도록 하자.&lt;/p>
+&lt;h2 id="상수도-저장되어-있다">상수도 저장되어 있다.&lt;/h2>
+&lt;p>아마 C언어 예제 써와보면서 이거 한번쯤은 적어봤을꺼 같다.&lt;/p>
+&lt;p>&lt;code>char* str = &amp;quot;Do not go gentle into that good night&amp;quot;;&lt;/code>&lt;/p>
+&lt;p>근데 한가지가 궁금해진다.&lt;/p>
+&lt;p>&lt;code>&amp;quot;Do not go gentle into that good night&amp;quot;&lt;/code>&lt;/p>
+&lt;p>이거 어디서 나온걸까?&lt;/p>
+&lt;p>&lt;code>const&lt;/code>라고 써본적 있는가?&lt;/p>
+&lt;p>지금 생각하는 &lt;strong>처음에 한번 지정해주면 두번다시 못바꾸는놈&lt;/strong> 맞다.&lt;/p>
+&lt;p>컴파일러마다 저장되는곳이 달라서 **변수는 어떻게 저장되나?**부분에서 언급을 안했는데&lt;/p>
+&lt;p>일반적으로 코드 내에서 쓰이는 &lt;strong>모든 상수&lt;/strong>는 메모리상 어딘가에 저장된다.&lt;/p>
+&lt;p>숫자, 문자열, 경로 가리지 않고 코드 실행될때 불러와서 메모리상 어딘가에 저장되고 &lt;strong>쓰기 금지&lt;/strong>처리된다. &lt;del>(다른프로그램에서 참견하면 수정 가능하긴 하지만 어쩃든 자기는 이부분 수정 못함)&lt;/del>&lt;/p>
+&lt;p>여기서 &lt;code>const&lt;/code>라는 놈으로 뭔가 선언해주면 이 공간을 직접 참조하고,&lt;/p>
+&lt;p>일반적인 변수를 선언하고 초기값을 지정해주면 이 공간에서 복사해서 대입하는 것이다.&lt;/p>
+&lt;p>그냥 그렇다&amp;hellip;..&lt;/p>
+&lt;p>심심해서 언급해 봤다.&lt;/p>
+&lt;p>뭔가 엄청나게 데이터가 큰 상수를 소스코드내에서 불러올생각은 되도록이면 하지 말자.&lt;/p>
+&lt;p>초기값이 메모리상에 프로그램 끝날때까지 계속 존재하니깐 말이다.&lt;/p></description></item><item><title>nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)</title><link>https://iwanhae.github.io/p/nginx-ssl-https/</link><pubDate>Wed, 21 Sep 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/nginx-ssl-https/</guid><description>&lt;img src="https://iwanhae.github.io/p/nginx-ssl-https/--.PNG" alt="Featured image of post nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>필자가 다니는 학교 wifi는 교내라면 어디서든 심지어 야외에서도 빵빵하게 터지는 엄청난 장점과 함께 크나큰 단점이 한가지 있는데&amp;hellip;..&lt;/p>
+&lt;p>라우터에서 http 통신내역을 까봐서 이것이 윈도우이면 보안을 위해 특정 프로그램을 설치하라는 홈페이지로 &lt;strong>강제&lt;/strong> 리다이렉트 시킨다는 점이다.&lt;/p>
+&lt;p>물론 &amp;ldquo;그냥 깔면 되는거 아니에요?&amp;rdquo; 하겠지만&amp;hellip;.. 이놈이 윈도 XP용으로 맞춰 만들어져 있어서 윈도 7, 8.1, 10에서는 깔기만해도 블루스크린으로 만들어주는 아주 대단한 놈이다.&lt;/p>
+&lt;p>이에대한 대응으로 VPN을 쓴다던가 우분투를 쓴다던가 크롬을 개조해서 http요청헤더에서 윈도부분만 쏙 빼는 별 여러가지 방법을 써봤지만 뭔가 느려지기도 하고 일일히 설정하는게 귀찮아지기도 하고 윈도가 편하고&amp;hellip;.&lt;del>(리눅스는 터미널로만 조작하는 스타일이다.)&lt;/del> 등의 이유로 별로 잘 사용하지 않게되었다.&lt;/p>
+&lt;p>그러다가 https는 요청헤더가 라우터에 까발려지지도 않아서 https로 제작된 사이트는~~(나X위키라던가 구X라던가 B잉 같은)~~ 자유롭게 접속 가능하다는 점을 알게 됬는데 학교에서 본인 http서버를 자유롭게 접속하기위해 본인의 서버를 https로 구성해본 경험을 적어보려 한다. ~~(사실 git서버 http통신으로 push하는데 이거때문에 해봤다는건 안비밀)~~&lt;/p>
+&lt;p>https에 대한 설명은
+&lt;a href="https://namu.wiki/w/TLS">https://namu.wiki/w/TLS&lt;/a>
+&lt;a href="https://opentutorials.org/course/228/4894">https://opentutorials.org/course/228/4894&lt;/a>
+요 두개를 읽어보면 대충 이해할수 있다 생각된다.&lt;/p>
+&lt;h2 id="1-인증서-만들기">1. 인증서 만들기&lt;/h2>
+&lt;p>일단 https를 구현하기위한 개인키(.key), 서면요청파일(.csr) 그리고 인증서파일(.crt)가 필요하다.&lt;/p>
+&lt;p>보통 이 3가지는 CA에서 발급해주는 것을 쓰는게 정석이지만 필자의 경우 암호화 과정이 필요한거지 유사 사이트로 속여지는것에 대한 대비를 하자는게 아니기에 OpenSSL을 통해 자체적으로 만들것이다.&lt;/p>
+&lt;p>OpenSSL은 apt던 yum 이던 기본적으로 제공해주는 프로그램이니 각자 알아서 설치해주시고&lt;/p>
+&lt;p>적당한 폴더에 들어가서&lt;/p>
+&lt;p>&lt;code>openssl req -new -newkey rsa:2048 -nodes -keyout 도메인이름.key -out 도메인이름.csr&lt;/code>&lt;/p>
+&lt;p>를 입력하고 (도메인이름이라곤 했지만 사실 뭘 쓰던 큰 상관은 없다.)&lt;/p>
+&lt;pre>&lt;code>Generating a 2048 bit RSA private key
+.............................+++
+......................................................+++
+writing new private key to '도메인이름.key'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:
+Email Address []:
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+&lt;/code>&lt;/pre>
+&lt;p>질문에 맞게 답해주면 .key파일고 .csr파일이 생성된다. &lt;!-- raw HTML omitted -->(참고로 개인용으로 쓸꺼면 진지하게 할 필요는 없다.)&lt;/p>
+&lt;p>그리고 나서&lt;/p>
+&lt;p>&lt;code>openssl x509 -req -days 365 -in 도메인이름.csr -signkey 도메인이름.key -out 도메인이름.crt&lt;/code>&lt;/p>
+&lt;p>명령어를 입력해주면 .crt 파일이 생성되는데 이를 통해 nginx에서 필요로 하는 파일은 .crt파일과 .key파일이 완성되었다.&lt;/p>
+&lt;blockquote>
+&lt;p>참고로&lt;!-- raw HTML omitted -->
+crt파일은 &lt;code>openssl x509 -in *.crt -noout -text&lt;/code>&lt;!-- raw HTML omitted -->
+csr파일은 &lt;code>openssl req -in *.csr -noout -text&lt;/code>&lt;!-- raw HTML omitted -->
+명령어를 통해 그 내용을 볼 수 있다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="2-nginx에서-써먹기">2. nginx에서 써먹기&lt;/h2>
+&lt;p>수정해야할 파일은 &lt;code>/etc/nginx/sites-enabled&lt;/code> 폴더속에 있는 아무 파일이다. 보통 default파일이 기본적으로 있으니 이걸 수정한다 가정하고 필요한 것은&lt;/p>
+&lt;pre>&lt;code> listen 443;
+ssl on;
+ssl_certificate /etc/SomeWhere/iwanhae.ga.crt; //crt경로
+ssl_certificate_key /etc/SomeWhere/iwanhae.ga.key; //key경로
+//key는 유출되면 암호화가 무의미해지므로 보안을 철저히 해야한다.
+&lt;/code>&lt;/pre>
+&lt;p>이 4줄을 추가해 주는 것이다.&lt;/p>
+&lt;p>완성형으로 표현하면 대충 이런꼴이다.&lt;/p>
+&lt;pre>&lt;code>server {
+listen 443;
+ssl on;
+ssl_certificate /etc/SomeWhere/iwanhae.ga.crt;
+ssl_certificate_key /etc/SomeWhere/iwanhae.ga.key;
+server_name blog.iwanhae.ga;
+//...//
+}
+&lt;/code>&lt;/pre>
+&lt;p>이렇게 해주면 하나의 server { &amp;hellip; } 에 대해서 443 포트에서 ssl이 적용된다.
+다만 이럴경우 80번 포트는 열린적이 없어지게 되므로 기존 주소로 접근시에는 접속 거부가 뜨게된다.&lt;/p>
+&lt;pre>&lt;code>server{
+server_name blog.iwanhae.ga;
+rewrite ^ https://$server_name$request_uri? permanent;
+}
+&lt;/code>&lt;/pre>
+&lt;p>이런식으로 새로운 server { &amp;hellip; } 를 만들어 자동으로 redirect 시키는걸 추천하지만&amp;hellip;..&lt;/p>
+&lt;p>&lt;img src="./--.PNG" alt="" />&lt;/p>
+&lt;p>CA에서 발급되지 않은 인증서를 쓰므로 다음과 같은 경고장이 날아오게 된다.&lt;/p>
+&lt;p>개인적 용도라면 별 상관없지만 공적인 용도라면 이 블로그처럼 http, https 모두 지원하게 설정해 놓는걸 추천한다.&lt;/p>
+&lt;p>&lt;a href="http://blog.iwanhae.ga">http://blog.iwanhae.ga&lt;/a>
+&lt;a href="https://blog.iwanhae.ga">https://blog.iwanhae.ga&lt;/a>&lt;/p>
+&lt;h2 id="덤">덤&lt;/h2>
+&lt;p>&lt;code>git clone&lt;/code>하면 보안문제때문에 clone이 안된다.&lt;!-- raw HTML omitted -->
+&lt;code>git -c http.sslVerify=false clone&lt;/code>을 통해 강제로 할수 있으니 참고하자.&lt;/p>
+&lt;h2 id="마무리">마무리&lt;/h2>
+&lt;p>https는 비록 심심풀이로 한 일이지만 꽤 괜찮다. 뭔가 암호화 됬다는 느낌과 함께 각종 라우터의 탐색은 모두 무시되고 &lt;del>(kt의 컴퓨터 대수제한이라던가 warning.or.kr이라던가&amp;hellip;)&lt;/del> 별로 기대하지 않았는데 OwnCloud에서 보안설정하라는 메세지도 안뜬다!!!&lt;/p>
+&lt;p>는 농담이고 일반적으로 이윤을 추구하지 않는 사이트 운영자는 아마 https를 별로 쓸일은 없을것이다. (있다면 부디 댓글로 남겨주길 바란다. 순수한 호기심이다.)&lt;/p>
+&lt;p>하지만 적어도 본인은 학교에서 자유롭게 본인 사이트에 접속할 수 있게되었고 웹페이지 기반 ssh, git서버, IDE, phpmyadmin~~, 영화사이트~~를 학교 와이파이로 만지작만지작 거릴수 있게되어 솔직하게 기쁘다.&lt;/p>
+&lt;p>궁금한점 있으면 댓글로 남겨주면 가능한 범위내에서 답변은 해주겠지만 본인도 새로운 분야이기에 가능하면 자문자답을 댓글로 해줬으면 하는 바람이다.&lt;/p>
+&lt;h2 id="2020년에-적는-코멘트">2020년에 적는 코멘트&lt;/h2>
+&lt;p>Google이 밀어준다고 https가 이렇게 활성화 될 줄 누가 알았겠어요? ㄷㄷ;;;&lt;/p>
+&lt;p>그당시에도 Let&amp;rsquo;s encrypt가 존재는 했었지만 그떄는 별로 인기가 없었고 https는 개인서버 운영자에게는 단순히 귀찮을 존재였을 뿐입니다.&lt;/p>
+&lt;p>지금은 안쓰면 검색노출도 안되는 기본적인 존재이지만요. 본 서버는 아마 바뀔지도 모르지만 기본적으로 Kubernetes + ingress nginx 환경에서 http&lt;strong>s&lt;/strong>로 제공됩니다.&lt;/p></description></item><item><title>(X11 Forwarding) Putty, GUI, SSH</title><link>https://iwanhae.github.io/p/x11-forwarding/</link><pubDate>Wed, 03 Feb 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/x11-forwarding/</guid><description>&lt;img src="https://iwanhae.github.io/p/x11-forwarding/example.png" alt="Featured image of post (X11 Forwarding) Putty, GUI, SSH" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>본인은 리눅스 조작할때 어지간해서는 GUI로 안하고 SSH로 접속해 콘솔환경으로 전부 끝내는 경향이 있다. 이유는 여러가지 있지만 가장 큰 이유는 아마 리눅스 GUI의 미묘하게 불편한 응답속도에 있다. 리눅스가 원래 GUI환경이 있을꺼란 전재하에 만들어진 운영체제가 아니다보니 윈도나 맥에비해 미묘한 딜레이가 있는데 개인적으로 이 이질감이 싫어 리눅스에서 GUI는 거의 안쓴다. (리눅스 콘솔은 가끔쓰지만 보통은 윈도에서 SSH환경을 더 선호한다.)&lt;/p>
+&lt;p>하지만 작업을 하다보면 GUI가 훨씬더 편할때가 꼭 있다. 예를들면 하드용량 확보할때 Baobab을 써 각 폴더의 상태를 보며 작업하면 무지 편하고 cmake할때 일일히 옵션들을 켤지 끌지 정해주는것보다 마우스로 클릭클릭하며 정해주는게 더 편하다.&lt;/p>
+&lt;p>이런 상황에 빠져있을 몇몇사람들을 위해 ssh X11 Forwarding 이라는 기능을 소개한다.
+이 기능을 사용하면 윈도우에서도 대략
+&lt;img src="./example.png" alt="" />
+이런 화면을 볼수있게 해주는 기능이다.&lt;/p>
+&lt;p>참고로 이 글은 Putty를통해 한번이라도 SSH접속을 해본사람들을 대상으로 적은 글이다.&lt;/p>
+&lt;h2 id="원리">원리&lt;/h2>
+&lt;p>리눅스는 본래 GUI환경을 고려하지 않고 탄생한 운영체제이다. 하지만 윈도우와 맥의 등장으로 GUI의 중요성은 갈수록 부각되어져갔고 1980년대 MIT에서 필요성에의해 X Window System 이라는 리눅스에서 GUI를 표시하는 수단을 개발해냈고 이 X Window System은 지금도 리눅스에서 가장 일반적으로 사용되는 GUI 표시수단이다. (물론 다른것도 있긴하다)&lt;/p>
+&lt;p>X Window System은 X Server와 X Client로 구성되어 있으며 흔히 우리가 말하는 &amp;ldquo;서버-클라이언트&amp;quot;의 구조를 가진다.&lt;/p>
+&lt;p>여기서 X Client는 화면에 무언가를 표시할 각 프로세서들을 의미하며 (파이어폭스나 탐색기 같은) X Client가 X Server에게 화면정보를 보내면 X Server는 받은 정보에 맞게 그림을 그려서 화면에 표시해주는 역할을 한다.&lt;/p>
+&lt;p>이들간의 통신은 소켓으로 행해지며 소켓이란 말을 들었을때 짐작했듯이 X Client와 X Server의 존재는 하나의 컴퓨터 안에 같이 존재할 필요는 없다. 말로하니 약간 어렵고 이상하게 된거 같은데 그림으로보면 다음과 같다.&lt;/p>
+&lt;p>&lt;img src="./1.png" alt="" />&lt;/p>
+&lt;p>컴퓨터에 X Server라는 존재가 있고 FireFox, Baobab, Gparted, Cmake같은 존재들이 여기서 X Client가 되어 X Server로 화면 구성에대한 정보를 넘겨 X Server가 화면을 그려주는 역할을 하는것이다.&lt;/p>
+&lt;p>근데 여기서 이 서버-클라이언트 구조사이에 통신이 소켓으로 행해지다보니 재미난일을 만들어낼수 있는데 그것은 바로 다음과 같이&lt;/p>
+&lt;p>&lt;img src="./2.png" alt="" />&lt;/p>
+&lt;p>다른 컴퓨터의 X Client의 정보를 받아 자신의 컴퓨터에 화면을 표시할수도 있다는것이다.&lt;/p>
+&lt;p>그리고 이 아이디어를 적용시켜 윈도우에 X Server를 만들어내고 리눅스 컴퓨터에 존재하는 X Client의 화면을 윈도우에서 표시시킨게 바로 처음보여준 사진과 같은 상황인 것이다.&lt;/p>
+&lt;p>그리고 지금부터 알려줄 방법은 Putty를 통해 리눅스컴퓨터와 연결한 후 SSH통신 하는김에 겸사겸사 X Client에서 보내주는 정보도 받아와 &lt;strong>Xming&lt;/strong>이라는 윈도우버전 X Server에 정보를 넘기는 방법이다.&lt;/p>
+&lt;h2 id="본론">본론&lt;/h2>
+&lt;p>일단 서버쪽에서 필요한 사항은&lt;/p>
+&lt;ol>
+&lt;li>ssh에서 X11Forwarding 사용허가&lt;/li>
+&lt;li>Xauth&lt;/li>
+&lt;/ol>
+&lt;p>이 두가지이다.&lt;!-- raw HTML omitted -->
+전자의 경우 &lt;code>/etc/ssh/sshd_config&lt;/code>에 가서 &lt;code>X11Forwarding yes&lt;/code>부분 주석을 해제해주던가 추가해주면 되고. (일반적으론 비허가가 기본인데 일부 배포판의경우 허가가 기본인경우도 있다. 확인해보자)&lt;/p>
+&lt;p>후자의 경우 X11이 설치되있으면 기본적으로 설치되있다.&lt;del>한번이라도 리눅스에서 GUI실행을 해봤다면 Xauth도 설치되어있을것이다&lt;/del> 안되있다면 따로 설치해주면된다.&lt;/p>
+&lt;p>그후 클라이언트쪽에선 일단&lt;!-- raw HTML omitted -->
+&lt;a href="http://www.straightrunning.com/XmingNotes/">http://www.straightrunning.com/XmingNotes/&lt;/a>
+로 들어가 Xming을 다운받은뒤 안내사항에따라 적당히 설치해 주고 실행시켜주자.&lt;/p>
+&lt;pre>&lt;code>Xming은 윈도우에서 작동하는 X Server이다. 실직적으로 이놈이 화면을 그려주는거고 Putty는 통신을 중계해주는역할을 한다. 그러니 이게 없으면 화면도 없다.
+&lt;/code>&lt;/pre>
+&lt;p>그 다음 Putty 접속하기전에 &lt;code>Connection - SSH - X11&lt;/code> 부분을
+&lt;img src="./3.PNG" alt="" />
+위 사진과 같이 바꿔주고 접속하면 된다.&lt;/p>
+&lt;p>(참고로 리눅스 컴퓨터에서 SSH접속하는경우 별 다른 설치없이 &lt;code>-x&lt;/code> 옵션만 넣어주면 된다.)&lt;/p>
+&lt;p>그후 접속되는건 평소랑 같지만 gui를 요구하는 프로그램을 실행시킬경우
+&lt;img src="./4.PNG" alt="" />
+( baobab 을 실행시킨 모습)
+&lt;img src="./5.PNG" alt="" />
+( cmake-gui를 실행시킨 모습)&lt;/p>
+&lt;p>위 사진과 같이 새로운 창이떠서 GUI로 작업을 할수 있게된다.&lt;/p>
+&lt;p>해보진 않았지만 &lt;code>파이어폭스&lt;/code>나 &lt;code>이클립스&lt;/code>도 잘 실행이되서 윈도우에서 원격으로 리눅스 개발을 하는사람도 존재한다는 모양이다.&lt;/p>
+&lt;p>참고로 이 방법은 픽셀 하나하나를 전송하는 스트리밍 방식과는다르게 &lt;strong>어디에 버튼을 만들고 어디에 이러이러한 글씨를 써놔라&lt;/strong>라는 정보를 전송하고 그리는건 이 화면이 보이는 컴퓨터에서 행해지는것이기 때문에 딜레이같은것도 없고 네트워크 트래픽도 별로 많이 잡아먹진 않는다. 다만 X11을 이용하지 않고 자체적인 수단으로 GUI를 구현하는 프로그램의 경우 &lt;del>(ex : 동영상플레이어, 게임)&lt;/del> 작동하지 않는다.&lt;/p>
+&lt;h2 id="결론">결론&lt;/h2>
+&lt;p>즐거운 리눅스 되세요~&lt;/p></description></item><item><title>라즈베리파이에서 FFMPEG로 인코딩 하기</title><link>https://iwanhae.github.io/p/pi-ffmpeg/</link><pubDate>Sat, 09 Jan 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/pi-ffmpeg/</guid><description>&lt;img src="https://iwanhae.github.io/p/pi-ffmpeg/encode.png" alt="Featured image of post 라즈베리파이에서 FFMPEG로 인코딩 하기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>현재 본인은 이 블로그서버를 운영하며 친구들, 지인끼리 동영상공유로도 사용하고 있다. 문제가 있다면 코덱이 워낙 다양한탓에 HTML5로 재생이 안되던가 스마트폰으로 스트리밍으로 재생하기에는 너무 무거운 동영상들이 있다는 것이다. 보통은 해당영상을 다른버전으로 다운받아 해결하지만 그게 힘들경우 따로 인코딩을 하는데 지금부터 라즈베리파이에서 인코딩을 하는법을 소개하겠다.&lt;/p>
+&lt;p>하는것은 자유지만 미리 말해두자면 라즈베리 파이의 성능이 성능인만큼 꽤 느리다. 보통 0.12배속으로 인코딩이 진행되는데 24분짜리 영상 인코딩하는데 3~4시간정도 걸린다. (참고로 오드로이드 XU4의 경우 1.1배속정도 나온다.)&lt;del>(단점은 쿨러소리가 상당하다는점)&lt;/del>&lt;/p>
+&lt;h2 id="준비물">준비물&lt;/h2>
+&lt;p>보통 대부분은 있지만 일부 배포판의경우 배포 용량을 줄이기위해 자주 빠지는 패키지들을 설치해주자. 설치가 되있다면 그냥 넘어가니 그냥 다음 명령어를 입력하자.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">apt-get install git build-essential
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="ffmpeg설치하기">FFMPEG설치하기&lt;/h2>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="nb">cd&lt;/span> /usr/src
+git clone git://git.videolan.org/x264
+&lt;span class="nb">cd&lt;/span> x264
+./configure --host&lt;span class="o">=&lt;/span>arm-unknown-linux-gnueabi --enable-static
+make -j4
+sudo make install
+&lt;span class="nb">cd&lt;/span> /usr/src
+git clone git://source.ffmpeg.org/ffmpeg.git
+&lt;span class="nb">cd&lt;/span> ffmpeg
+sudo ./configure --arch&lt;span class="o">=&lt;/span>armel --target-os&lt;span class="o">=&lt;/span>linux --enable-gpl --enable-libx264 --enable-nonfree
+make -j4
+sudo make install
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>다음을 스크립트**(.sh파일)**로 만들어서 루트권한으로 실행시켜주자. 전반부는 가장 많은 기기가 지원하는 H264코덱관련 라이브러리를 설치하는부분이고 후반은 ffmpeg를 설치하는 부분이다.&lt;/p>
+&lt;p>&lt;a class="link" href="./install-ffmpeg.sh" >여기&lt;/a>서 완성된 파일을 다운받을수도 있다.&lt;/p>
+&lt;p>시간이 꽤 걸린다. 켜놓고 딴짓하기 좋은 상황에서 실행하기를 권장한다.&lt;/p>
+&lt;blockquote>
+&lt;p>오드로이드 XU4의경우 OpenCL(GPU가속)이 지원된다. 아직 인코딩에서 되는건 아니지만 후반부 &lt;code>./configure&lt;/code>할때 &lt;code>--enable-opencl&lt;/code>옵션을 추가해주자.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="인코딩하기">인코딩하기&lt;/h2>
+&lt;p>인코딩방법은 간단하다.&lt;!-- raw HTML omitted -->
+&lt;code>ffmpeg -i [입력파일] -vcodec libx264 [출력파일]&lt;/code>&lt;!-- raw HTML omitted -->
+아니면 &lt;!-- raw HTML omitted -->
+&lt;code>ffmpeg -i [입력파일] -s 1280x720 -vcodec libx264 [출력파일]&lt;/code>&lt;!-- raw HTML omitted -->
+과 같이해서 화면크기를 다르게 하던가&lt;!-- raw HTML omitted -->
+&lt;code>ffmpeg -i [입력파일] -s 1280x720 -threads 1 -vcodec libx264 [출력파일]&lt;/code>&lt;!-- raw HTML omitted -->
+과 같이해서 단일스레드로 인코딩을 진행시킬수도 있다.&lt;/p>
+&lt;p>옵션은 여러가지가 있으며 각자 자신이 원하는 설정에 맞춰 진행하도록 하자.
+일반적으로 이정도 설정이면 핸드폰이나 웹브라우저에서 감상하는데 지장은 없다. (오디오쪽은 불확실)&lt;/p>
+&lt;h2 id="덤">덤&lt;/h2>
+&lt;p>심슨이나 영드같은 하나의 세트로 구성되있는 영상의경우 이 명령어는 한번에 하나씩밖에 못하며 그나마도 한번 입력하면 최소 4시간뒤에 다시 입력해줘야한다&amp;hellip;.. &lt;del>(수면중 인코딩은 꿈건너 얘기)&lt;/del>&lt;/p>
+&lt;p>그런분들을 위해 간단한 스크립트를 소개한다.&lt;/p>
+&lt;div class="highlight">&lt;pre class="chroma">&lt;code class="language-bash" data-lang="bash">mkdir bak
+mkdir tmp
+&lt;span class="k">for&lt;/span> i in *.avi&lt;span class="p">;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+ffmpeg -i &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> -vcodec libx264 &lt;span class="s2">&amp;#34;./tmp/&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+mv &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;./bak/&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+mv &lt;span class="s2">&amp;#34;./tmp/&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$i&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;span class="k">done&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>이 스크립트를 소개하자면 이 sh파일을 실행시킨 경로에서 모든 avi파일을 찾아낸뒤 tmp폴더에 인코딩 결과물을 생성하고 인코딩이 완료됬을때 기존파일은 bak폴더로, 인코딩된 파일을 원래위치로 옮겨주는 스크립트이다. 각자 상황에 맞게 수정해서 사용하자.&lt;/p>
+&lt;blockquote>
+&lt;p>사용예시&lt;/p>
+&lt;p>&lt;img src="./encode.png" alt="" />&lt;/p>
+&lt;p>&lt;code>encode.sh&lt;/code>위 스크립트내용이 그대로 들어가있는 파일이다. 영상이 있는 장소에서 다음과 같이 명령어를 사용하면된다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="덤2">덤2&lt;/h2>
+&lt;p>참고로 본인은 이렇게 사용하고 있다.
+&lt;img src="./---_20160103_110403_LLS.jpg" alt="" />&lt;/p>
+&lt;p>사람없을때는 ODROID XU4가 엄청나게 시끄러운 소음을 내며 인코딩 사람 있을때는 RASPBERRYPI2에 전원을 공급하고 NFS로 ODROID XU4의 영상파일에 접근해 영상 인코딩.&lt;/p></description></item><item><title>우분투, NFS 설정</title><link>https://iwanhae.github.io/p/nfs_guideline/</link><pubDate>Sun, 03 Jan 2016 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/nfs_guideline/</guid><description>&lt;img src="https://iwanhae.github.io/p/nfs_guideline/serverside-scripting-electronics-accessory-file-system-andrew-computer-icon.jpg" alt="Featured image of post 우분투, NFS 설정" />&lt;h3 id="서버쪽">서버쪽&lt;/h3>
+&lt;p>&lt;code>apt-get install nfs-common nfs-kernel-server rpcbind&lt;/code>&lt;/p>
+&lt;p>설치 완료후&lt;/p>
+&lt;p>&lt;code>/etc/exports&lt;/code>&lt;/p>
+&lt;p>파일을 수정&lt;/p>
+&lt;p>&lt;code>/home/test/testfolder&lt;/code>&lt;/p>
+&lt;p>를 공유한다 가정할때&lt;/p>
+&lt;p>마지막줄에&lt;/p>
+&lt;p>&lt;code>/home/test/testfolder 192.168.0.X(rw, no_root_squash, sync)&lt;/code>&lt;!-- raw HTML omitted -->
+&lt;code>[/경로] [허용할 IP주소. *은 모두허용](옵션들)&lt;/code>&lt;/p>
+&lt;p>와 같은 줄을 추가. (IP주소와 옵션은 붙어있다. 띄어쓰기하면 기본값으로 열리니 주의)&lt;/p>
+&lt;p>옵션은 다음과 같은 선택지가 있음&lt;/p>
+&lt;pre>&lt;code>ro : 읽기 전용
+rw : 읽기 및 쓰기 가능
+no_root_squash : 클라이언트쪽 root도 서버쪽 root와 같은권한가짐
+no_all_squash : root이외 모든사용자에대해 UID가 같으면 같은권한을가짐
+sync : 서버와 클라이언트사이에 sync를 맞춤
+insecure : 인증안되도 접속허가
+&lt;/code>&lt;/pre>
+&lt;p>설정해준뒤&lt;!-- raw HTML omitted -->
+&lt;code>service nfs-kernel-server restart&lt;/code>&lt;!-- raw HTML omitted -->
+&lt;code>service rpcbind restart&lt;/code>&lt;!-- raw HTML omitted -->
+로 서버 재시작&lt;/p>
+&lt;h3 id="클라이언트쪽">클라이언트쪽&lt;/h3>
+&lt;p>&lt;code>apt-get install nfs-common&lt;/code>&lt;!-- raw HTML omitted -->
+설치해준뒤&lt;/p>
+&lt;p>&lt;code>mount -t nfs [주소]:[/경로] [/마운트 할장소]&lt;/code>&lt;!-- raw HTML omitted -->
+&lt;code>(ex : mount -t nfs blog.iwanhae.ga:/home/test/testfolder /home/anywhereyouwant)&lt;/code>&lt;/p>
+&lt;p>해주면 끗&lt;/p></description></item><item><title>리눅스, 하드디스크를 절전모드로 두기 (hdparm)</title><link>https://iwanhae.github.io/p/introducing-hdparm/</link><pubDate>Sat, 12 Dec 2015 00:00:00 +0000</pubDate><guid>https://iwanhae.github.io/p/introducing-hdparm/</guid><description>&lt;img src="https://iwanhae.github.io/p/introducing-hdparm/harddrive-icon-18.jpg" alt="Featured image of post 리눅스, 하드디스크를 절전모드로 두기 (hdparm)" />&lt;h1 id="서론">서론&lt;/h1>
 &lt;p>&lt;img src="https://iwanhae.github.io/img_server/server_2.jpg" alt="" />
 &lt;img src="https://iwanhae.github.io/img_server/server_1.png" alt="" />&lt;/p>
 &lt;p>요런식으로 서버를 운영하다보니 하드디스크 돌아가는 소리가 좀 거슬린다&amp;hellip;.
