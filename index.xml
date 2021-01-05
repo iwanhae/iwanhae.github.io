@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>iWan</title><link>https://blog.iwanhae.ga/</link><description>Recent content on iWan</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><lastBuildDate>Tue, 02 Jul 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.iwanhae.ga/index.xml" rel="self" type="application/rss+xml"/><item><title>Odroid N2, Linux에서 UAS 비활성화</title><link>https://blog.iwanhae.ga/p/disabling_uas_on_linux/</link><pubDate>Tue, 02 Jul 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/disabling_uas_on_linux/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/disabling_uas_on_linux/5700219_2.jpg" alt="Featured image of post Odroid N2, Linux에서 UAS 비활성화" />&lt;h1 id="서론">서론&lt;/h1>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>iWan</title><link>https://blog.iwanhae.kr/</link><description>Recent content on iWan</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><lastBuildDate>Tue, 02 Jul 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.iwanhae.kr/index.xml" rel="self" type="application/rss+xml"/><item><title>Odroid N2, Linux에서 UAS 비활성화</title><link>https://blog.iwanhae.kr/p/disabling_uas_on_linux/</link><pubDate>Tue, 02 Jul 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/disabling_uas_on_linux/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/disabling_uas_on_linux/5700219_2.jpg" alt="Featured image of post Odroid N2, Linux에서 UAS 비활성화" />&lt;h1 id="서론">서론&lt;/h1>
 &lt;p>외장하드 기능을 보다보면 간혹 &lt;code>UAS&lt;/code> 혹은 &lt;code>UASP&lt;/code>라고 불리는 기능이 있다. USB Attached SCSI 라는놈인데 이름 그대로 SCSI 기술을 USB를 통해 사용하겠다는건데&lt;/p>
 &lt;p>왜 USB를 그냥 USB로 안쓰고 이렇게 번거롭게 SCSI명령어로 바꾼다음에 보내냐면 이게 더 빠르기 때문이다.&lt;/p>
 &lt;p>정확히는 SCSI의 경우 별도의 컨트롤러가 명령어를 하드웨어레벨로 처리하기때문에 CPU가 데이터를 USB명령어에 맞게 인코드해서 보내줄필요 없이 CPU는 그냥 데이터를 메모리상에 올려두기만 하면 나머지는 컨트롤러가 알아서 외부 디바이스로 보내주기땜에 CPU로드가 훨씬 적고 거의 대부분의 경우 병목현상이 없기때문에 훨씬 빠르다. (SATA레벨은 아닌 모양이지만)&lt;/p>
@@ -107,7 +107,7 @@ Example: quirks=0419:aaf5:rl,0421:0433:rc
 &lt;p>Odroid N2는 정말 성능도 끝내주고, 소비전력도 엄청 적고, 생긴것도 나름 괜찮고, 소음도 없고 하드웨어적으로는 정말 끝내주는 놈이다.&lt;/p>
 &lt;p>하지만 나온지 얼마 안된놈이다. 안되는게 너무 많다. 심지어 Docker 돌리는데도 가끔 알수없는 에러가 난다&amp;hellip;&amp;hellip;&amp;hellip; 이래서 서버는 안정성이 검증된놈을 쓰는구나&amp;hellip;. 라는걸 절실하게 깨달았다&amp;hellip;&amp;hellip;&lt;/p>
 &lt;p>생각해보면 XU3가 막 나왔을 때에도 그랬던거 같다. 근데 요즘은 안되는게 없는거 보면 (ARM에서 KVM돌리는건 처음본다.) 이놈도 괜찮아질꺼 같기는 한데 문제는 지금 당장이 좀 불안불안 하다는 것이다.&lt;/p>
-&lt;p>일단 지금은 어떻게든 안정적인 세팅을 완료했으니 당분간 방치해둬야겠다.&lt;/p></description></item><item><title>Netplan Bridge 구성기</title><link>https://blog.iwanhae.ga/p/config-netplan-bridge/</link><pubDate>Tue, 28 May 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/config-netplan-bridge/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/config-netplan-bridge/netplan.png" alt="Featured image of post Netplan Bridge 구성기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>일단 지금은 어떻게든 안정적인 세팅을 완료했으니 당분간 방치해둬야겠다.&lt;/p></description></item><item><title>Netplan Bridge 구성기</title><link>https://blog.iwanhae.kr/p/config-netplan-bridge/</link><pubDate>Tue, 28 May 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/config-netplan-bridge/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/config-netplan-bridge/netplan.png" alt="Featured image of post Netplan Bridge 구성기" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>우분투가 &lt;code>netplan&lt;/code>을 사용한지는 꽤 된걸로 알고있다. &lt;code>17.04&lt;/code> 부터 였던가? 아마 그쯤이었던걸로 기억한다. 그냥 알던데로 ifup, ifdown 명령어를 쓰거나 /etc/network에 들어가서 네트워크 설정을 분명 수정했는데 제대로 반영이 안되서 멘붕왔던게 지금도 기억난다. ㅋㅋㅋ&amp;hellip;..ㅠ&lt;/p>
 &lt;p>뭐 그건 그때고, &lt;code>netplan&lt;/code>을 한번 알고나니깐 이렇게 직관적이고 간편한것도 없다는게 지금생각이다. 덕분에 &lt;code>CentOS&lt;/code>쪽을 사용도 못해보겠다는게 함정이라면 함정이지만 말이다.&lt;/p>
 &lt;p>그런 느낌으로 지내오다가 요즘 VM 가지고 놀다가 자체 NAT으로 돌리자니 불편한점이 너무 많고 어차피 &lt;code>iptime&lt;/code> 공유기 안쪽에서 노는건데 ip관리는 전부 공유기한테 시키고 &lt;code>Host&lt;/code>는 가상머신만 구동시키라는 느낌으로 브릿지 구성하면서 뻘짓들 기록으로좀 남겨본다.&lt;/p>
@@ -164,7 +164,7 @@ systemctl mask systemd-networkd-wait-online&lt;/p>
 &lt;p>문제는 이렇게 어떻게든 한번만 성공하면, 영원히 방치다. 문제일어나기 전까지는 절대 안만지고, 문제가 일어나지도 않는다.
 &lt;del>(지금도 어떻게 Bridge에다 NAT 환경을 하나 붙여두긴 했는데 이건 진짜 어떻게 했는지도 모르겠다.)&lt;/del>&lt;/p>
 &lt;p>그러니 성공해도 왜 성공했는지 모르며, 경험이 쌓이지 않는것 같다는게 개인적인 감상이다.&lt;/p>
-&lt;p>그래서 작지만 성공한 케이스에 대해 이렇게 기록을 남겨보고자 한다.&lt;/p></description></item><item><title>원리부터 파악하는 Unity의 DOTS</title><link>https://blog.iwanhae.ga/p/introduction-of-unity-dots/</link><pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/introduction-of-unity-dots/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/introduction-of-unity-dots/unity.png" alt="Featured image of post 원리부터 파악하는 Unity의 DOTS" />&lt;h1 id="서론">서론&lt;/h1>
+&lt;p>그래서 작지만 성공한 케이스에 대해 이렇게 기록을 남겨보고자 한다.&lt;/p></description></item><item><title>원리부터 파악하는 Unity의 DOTS</title><link>https://blog.iwanhae.kr/p/introduction-of-unity-dots/</link><pubDate>Fri, 24 May 2019 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/introduction-of-unity-dots/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/introduction-of-unity-dots/unity.png" alt="Featured image of post 원리부터 파악하는 Unity의 DOTS" />&lt;h1 id="서론">서론&lt;/h1>
 &lt;p>필자는 원래 게임을 별로 즐겨하는 성격이 아니기에 Unity에 별 관심이 없었다.&lt;/p>
 &lt;p>데이터 시각화 수단으로써 잠깐 관심을 가졌던적이 있긴 하지만 그것도 잠시 훌륭한 Javascript 라이브러리들이 무식하게 커다란 데이터도 효율적으로, 구현하기 쉽게 시각화 수단을 제공하면서 이에대한 관심도 금방 사라졌다. (아무래도 Unity는 Restful한게 기본은 아니기에&amp;hellip;.)&lt;/p>
 &lt;p>그렇게 관심이 없어지면서 2018년까지 필자의 Unity에 대한 생각은&lt;/p>
@@ -285,7 +285,7 @@ Job 과정에서 서로 충돌중인 두 객체를 확인한후 이들에게 특
 &lt;p>기존의 패러다임과(OOP)는 좀 많이 달라 유니티계 고인물들이 익숙치 않다는게 좀 문제지만 개인적으로 DOTS에서 제시하는 프로그래밍 가이드라인을 따라가다보면 성능상의 이득뿐만이 아닌 큰 규모의 프로젝트에서 코드의 가독성을 높여줄꺼라 확신한다.&lt;/p>
 &lt;p>확신하는 이유는 경험이다. 비록 게임분야는 입문도 안해봤지만 머신러닝하면서 익혀본 노가다 계산 영역에서는 이렇게 Data Fetch 부분과 Proccessing 부분을 나눠두면 작은규모에선 짜증나도 큰큐모로 가면 직관성이 높아지고, MongoDB에 저장되어있는 데이터처럼 모든 객체가 대체적으로는 유사하지만 자유로운 형태를 가지는 데이터를 가지고 놀때도 새로운 Type을 정의해줄 필요가 없어 꽤 유용하다. &lt;del>(여러분 샘플링 데이터는 일정한 규격을 가진걸 고릅시다!)&lt;/del>&lt;/p>
 &lt;p>물론 장점만 있는것은 아닐 것이다. 하지만 일단 지금 당장은 그 단점이 뭔지 모르겠다.&lt;/p>
-&lt;p>실제 이러한 디자인으로 개발을 시작하면 뭔가 안좋은점이 나타날지도 모르겠지만, 객체지향의 형식을 가지고(Entity) 병렬화를 가능하게 하며(Job) Low-Level 최적화를 통해 성능을 이끌어낸(Burst Compiler) DOTS를 아직(2019년 5월) 미완성이라서 안쓰고 있다는 이유를 제외하고 다른 이유로 안쓴다는것은 손해라고 생각한다.&lt;/p></description></item><item><title>Freenom 도메인 갱신하는법</title><link>https://blog.iwanhae.ga/p/renewing_freenom_domain/</link><pubDate>Wed, 20 Dec 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/renewing_freenom_domain/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/renewing_freenom_domain/1.PNG" alt="Featured image of post Freenom 도메인 갱신하는법" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>실제 이러한 디자인으로 개발을 시작하면 뭔가 안좋은점이 나타날지도 모르겠지만, 객체지향의 형식을 가지고(Entity) 병렬화를 가능하게 하며(Job) Low-Level 최적화를 통해 성능을 이끌어낸(Burst Compiler) DOTS를 아직(2019년 5월) 미완성이라서 안쓰고 있다는 이유를 제외하고 다른 이유로 안쓴다는것은 손해라고 생각한다.&lt;/p></description></item><item><title>Freenom 도메인 갱신하는법</title><link>https://blog.iwanhae.kr/p/renewing_freenom_domain/</link><pubDate>Wed, 20 Dec 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/renewing_freenom_domain/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/renewing_freenom_domain/1.PNG" alt="Featured image of post Freenom 도메인 갱신하는법" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>매년 12월마다 iwanhae.ga 도메인을 갱신하는일을 벌써 3번째 해보는데
 할때마다 까먹고 Ticket만들어서 어떻게 하냐고 물어보는거 짜증나서 적어둔다.&lt;/p>
 &lt;h2 id="본론">본론&lt;/h2>
@@ -307,7 +307,7 @@ Job 과정에서 서로 충돌중인 두 객체를 확인한후 이들에게 특
 &lt;p>끗&lt;/p>
 &lt;h2 id="후기">후기&lt;/h2>
 &lt;p>&lt;img src="./3.PNG" alt="" />
-&lt;del>사실 이분 너무 안쓰러워서 작성함&amp;hellip;&amp;hellip;&lt;/del>&lt;/p></description></item><item><title>사이버 지식 정보방 (사지방) 구글 접속기</title><link>https://blog.iwanhae.ga/p/saga_of_wanhae_the_googler/</link><pubDate>Tue, 24 Oct 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/saga_of_wanhae_the_googler/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/saga_of_wanhae_the_googler/1.png" alt="Featured image of post 사이버 지식 정보방 (사지방) 구글 접속기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;del>사실 이분 너무 안쓰러워서 작성함&amp;hellip;&amp;hellip;&lt;/del>&lt;/p></description></item><item><title>사이버 지식 정보방 (사지방) 구글 접속기</title><link>https://blog.iwanhae.kr/p/saga_of_wanhae_the_googler/</link><pubDate>Tue, 24 Oct 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/saga_of_wanhae_the_googler/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/saga_of_wanhae_the_googler/1.png" alt="Featured image of post 사이버 지식 정보방 (사지방) 구글 접속기" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>군인이다&amp;hellip;.&lt;/p>
 &lt;p>비록 군대에 있긴하지만 일과시간만 벗어나면 어느정도 자유시간이 보장되며 필자도 정기적으로 사지방에 와서 인터넷 세계를 맛볼수 있다.&lt;/p>
 &lt;p>다만 문제가 되는게&amp;hellip;&amp;hellip;.&lt;/p>
@@ -366,7 +366,7 @@ Job 과정에서 서로 충돌중인 두 객체를 확인한후 이들에게 특
 &lt;/code>&lt;/pre>
 &lt;h2 id="추신3">추신3&lt;/h2>
 &lt;p>임시방편 배치파일 만듬 ㅇㅅㅇ
-&lt;a class="link" href="./DNSCHANGE.bat" >여기&lt;/a>&lt;/p></description></item><item><title>ShellinaBox 웹에서 즐기는 터미널</title><link>https://blog.iwanhae.ga/p/shellinabox/</link><pubDate>Sun, 01 Oct 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/shellinabox/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/shellinabox/1315785_orig.png" alt="Featured image of post ShellinaBox 웹에서 즐기는 터미널" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;a class="link" href="./DNSCHANGE.bat" >여기&lt;/a>&lt;/p></description></item><item><title>ShellinaBox 웹에서 즐기는 터미널</title><link>https://blog.iwanhae.kr/p/shellinabox/</link><pubDate>Sun, 01 Oct 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/shellinabox/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/shellinabox/1315785_orig.png" alt="Featured image of post ShellinaBox 웹에서 즐기는 터미널" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>지금 필자는 군인이다.
 군대에 있다.&lt;/p>
 &lt;p>다행이도 보직을 그런쪽으로 받아서 그런지 컴퓨터를 사용할 기회가 많으며 여가시간을 이용해 군대내 인트라넷이 아닌 외부 인터넷에 접속할 기회도 많다.&lt;/p>
@@ -391,7 +391,7 @@ Job 과정에서 서로 충돌중인 두 객체를 확인한후 이들에게 특
 &lt;p>&lt;del>음핫핫핫핫&lt;/del>&lt;/p>
 &lt;p>&lt;del>군대에서 SSH로 서버에 접속만 가능하면 난 무적이다!!!&lt;/del>&lt;/p>
 &lt;p>는 농담이고 빨리 전역하고 싶습니다&amp;hellip;.
-( &lt;a href="https://goon.iwanhae.ga">https://goon.iwanhae.ga&lt;/a> )&lt;/p></description></item><item><title>원리부터 파악하는 비트코인</title><link>https://blog.iwanhae.ga/p/introduction_of_bitcoin/</link><pubDate>Fri, 24 Feb 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/introduction_of_bitcoin/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/introduction_of_bitcoin/8369-bitcoin_102502.png" alt="Featured image of post 원리부터 파악하는 비트코인" />&lt;p>&lt;a href="https://git.iwanhae.ga/wan/introduction_of_bitcoin">https://git.iwanhae.ga/wan/introduction_of_bitcoin&lt;/a>&lt;/p>
+( &lt;a href="https://goon.iwanhae.ga">https://goon.iwanhae.ga&lt;/a> )&lt;/p></description></item><item><title>원리부터 파악하는 비트코인</title><link>https://blog.iwanhae.kr/p/introduction_of_bitcoin/</link><pubDate>Fri, 24 Feb 2017 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/introduction_of_bitcoin/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/introduction_of_bitcoin/8369-bitcoin_102502.png" alt="Featured image of post 원리부터 파악하는 비트코인" />&lt;p>&lt;a href="https://git.iwanhae.ga/wan/introduction_of_bitcoin">https://git.iwanhae.ga/wan/introduction_of_bitcoin&lt;/a>&lt;/p>
 &lt;h3 id="서론">서론&lt;/h3>
 &lt;p>지금 (2016년 12월) 우리나라는 비트코인 열기가 한풀 꺽인 참이지만 세계적으로, 특히 중국의 경우 왠지모르게 엄청난 채굴경쟁과 함께 &lt;del>(사실 세계라긴보단 중국 내에서 열풍인데 총 채굴성능의 50% 이상이 중국에서 나옴)&lt;/del> &lt;del>(일본도 약간 유행중.)&lt;/del> 그 시세가 엄청 올랐다.&lt;/p>
 &lt;p>그 이유는 모르겠지만 생각난김에 비트코인을 처음보는사람이 이 포스트만보고 프로토타입을 구현할 수 있을정도의 설명을 적어보자 한다.&lt;/p>
@@ -709,7 +709,7 @@ Return true;&lt;/p>
 &lt;p>유닉스 TimeStamp사용 &lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/section></description></item><item><title>Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort</title><link>https://blog.iwanhae.ga/p/bitonic-sort_batchers-oddeven-mergesort/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/bitonic-sort_batchers-oddeven-mergesort/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/bitonic-sort_batchers-oddeven-mergesort/843px-BitonicSort1.svg.png" alt="Featured image of post Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;/section></description></item><item><title>Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort</title><link>https://blog.iwanhae.kr/p/bitonic-sort_batchers-oddeven-mergesort/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/bitonic-sort_batchers-oddeven-mergesort/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/bitonic-sort_batchers-oddeven-mergesort/843px-BitonicSort1.svg.png" alt="Featured image of post Bitonic Sort (바이토닉 정렬) &amp; batcher's oddeven mergesort" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>정렬알고리즘 뭐가좋아요? 라고 물어본다면&lt;/p>
 &lt;p>뭐 데이터 개수나 컴퓨터 성능의 제약등 이것저것 따져봐야할께 많이 있기는 하지만 일반적으로 Quick Sort면 대충 해결된다.&lt;/p>
 &lt;p>하지만, 시대는 더이상 **&amp;ldquo;단일 스레드를 빠르게!!&amp;quot;**가 아닌 **&amp;ldquo;엄청 많은 스레드를 같이!!&amp;quot;**의 시대로 변해버렸다.&lt;/p>
@@ -815,7 +815,7 @@ Return true;&lt;/p>
 &lt;p>(보통 batcher&amp;rsquo;s oddeven mergesort 를 더 많이 쓴다는듯 하다.)&lt;/p>
 &lt;h2 id="batchers-oddeven-mergesort">batcher&amp;rsquo;s oddeven mergesort&lt;/h2>
 &lt;p>작성중&amp;hellip;.&lt;/p>
-&lt;p>-&amp;gt; 작성예정 없음&lt;/p></description></item><item><title>Systemd를 이용한 rc.local활성화 (우분투 16.10)</title><link>https://blog.iwanhae.ga/p/rc-local_systemd/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/rc-local_systemd/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/rc-local_systemd/I0KhR2h.png" alt="Featured image of post Systemd를 이용한 rc.local활성화 (우분투 16.10)" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>-&amp;gt; 작성예정 없음&lt;/p></description></item><item><title>Systemd를 이용한 rc.local활성화 (우분투 16.10)</title><link>https://blog.iwanhae.kr/p/rc-local_systemd/</link><pubDate>Wed, 28 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/rc-local_systemd/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/rc-local_systemd/I0KhR2h.png" alt="Featured image of post Systemd를 이용한 rc.local활성화 (우분투 16.10)" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>좀 전부터 systemd가 흥하다 싶더니 순식간에 레드헷계열은 물론이요 데비안도 전부 systemd를 사용하게 되었습니다.&lt;/p>
 &lt;p>&lt;a class="link" href="http://www.zdnet.com/article/linus-torvalds-and-others-on-linuxs-systemd/" target="_blank" rel="noopener"
 >Systmed란?(ZDnet기사)&lt;/a>&lt;/p>
@@ -862,7 +862,7 @@ WantedBy=multi-user.target
 &lt;p>(자세한 의미는 &lt;a class="link" href="https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files" target="_blank" rel="noopener"
 >여기&lt;/a>참조)&lt;/p>
 &lt;p>그 후 &lt;code>sudo systemctl enable rc-local.service&lt;/code> 해주면 제대로 rc.local서비스가 활성화 됩니다.&lt;/p>
-&lt;p>이제 하던데로 &lt;code>/etc/rc.local&lt;/code>파일 작성해서 사용해 주면 됩니다. (실행권한주는거 잊지 마세요~)&lt;/p></description></item><item><title>뒤에서 부터 보는 C언어: 1. 기본적인것들</title><link>https://blog.iwanhae.ga/p/clang_from_backward_1/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/clang_from_backward_1/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/clang_from_backward_1/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 1. 기본적인것들" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>이제 하던데로 &lt;code>/etc/rc.local&lt;/code>파일 작성해서 사용해 주면 됩니다. (실행권한주는거 잊지 마세요~)&lt;/p></description></item><item><title>뒤에서 부터 보는 C언어: 1. 기본적인것들</title><link>https://blog.iwanhae.kr/p/clang_from_backward_1/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/clang_from_backward_1/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/clang_from_backward_1/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 1. 기본적인것들" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>C언어는 아무도 이의를 제기할 수 없을정도로 장수한 프로그래밍 언어중 가장 인기가 높은 언어이다. 그리고 또한 C언어를 프로그래밍 언어의 입문으로 생각하여 처음 접하는 언어로 C언어를 택하는 사람도 많다고 생각된다.&lt;/p>
 &lt;p>하지만 이러한 현실 속에서 실질적으로 C언어에대한 책이나 강의를 보면 하나같이 다 똑같다.&lt;/p>
 &lt;blockquote>
@@ -909,7 +909,7 @@ WantedBy=multi-user.target
 &lt;p>영어를 분석해서 기계어로 바꿔주는놈 &lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;/section></description></item><item><title>뒤에서 부터 보는 C언어: 2. 변수</title><link>https://blog.iwanhae.ga/p/clang_from_backward_2/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/clang_from_backward_2/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/clang_from_backward_2/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 2. 변수" />&lt;h2 id="변수란-무엇인가">변수란 무엇인가?&lt;/h2>
+&lt;/section></description></item><item><title>뒤에서 부터 보는 C언어: 2. 변수</title><link>https://blog.iwanhae.kr/p/clang_from_backward_2/</link><pubDate>Tue, 27 Dec 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/clang_from_backward_2/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/clang_from_backward_2/clang.png" alt="Featured image of post 뒤에서 부터 보는 C언어: 2. 변수" />&lt;h2 id="변수란-무엇인가">변수란 무엇인가?&lt;/h2>
 &lt;p>변수, 영어로는 Variable, Vary(달라지다) + able(가능하다)&lt;/p>
 &lt;p>뭐 대충 한번쯤 써본적은 있을테니 알꺼라 믿지만 &lt;del>(컴퓨터 아니라도 수학에서 허구한날 쓰니깐)&lt;/del> 그래도 고전적이게 한번 써보자면 이것은 그릇이다.&lt;/p>
 &lt;p>그릇 안에는 0과 1의 조합이 들어있고 그릇에는 그릇 고유의 이름과 그릇의 특성이 있는데 이름은 사용자가 맘대로 정하는거고 그릇의 특성에따라 컴퓨터가 해석하는 방법이 달라진다.&lt;/p>
@@ -1143,7 +1143,7 @@ WantedBy=multi-user.target
 &lt;p>그냥 그렇다&amp;hellip;..&lt;/p>
 &lt;p>심심해서 언급해 봤다.&lt;/p>
 &lt;p>뭔가 엄청나게 데이터가 큰 상수를 소스코드내에서 불러올생각은 되도록이면 하지 말자.&lt;/p>
-&lt;p>초기값이 메모리상에 프로그램 끝날때까지 계속 존재하니깐 말이다.&lt;/p></description></item><item><title>nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)</title><link>https://blog.iwanhae.ga/p/nginx-ssl-https/</link><pubDate>Wed, 21 Sep 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/nginx-ssl-https/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/nginx-ssl-https/--.PNG" alt="Featured image of post nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>초기값이 메모리상에 프로그램 끝날때까지 계속 존재하니깐 말이다.&lt;/p></description></item><item><title>nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)</title><link>https://blog.iwanhae.kr/p/nginx-ssl-https/</link><pubDate>Wed, 21 Sep 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/nginx-ssl-https/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/nginx-ssl-https/--.PNG" alt="Featured image of post nginx 개인서버에 HTTPS(TLS/SSL) 적용하기 (CA 없이)" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>필자가 다니는 학교 wifi는 교내라면 어디서든 심지어 야외에서도 빵빵하게 터지는 엄청난 장점과 함께 크나큰 단점이 한가지 있는데&amp;hellip;..&lt;/p>
 &lt;p>라우터에서 http 통신내역을 까봐서 이것이 윈도우이면 보안을 위해 특정 프로그램을 설치하라는 홈페이지로 &lt;strong>강제&lt;/strong> 리다이렉트 시킨다는 점이다.&lt;/p>
 &lt;p>물론 &amp;ldquo;그냥 깔면 되는거 아니에요?&amp;rdquo; 하겠지만&amp;hellip;.. 이놈이 윈도 XP용으로 맞춰 만들어져 있어서 윈도 7, 8.1, 10에서는 깔기만해도 블루스크린으로 만들어주는 아주 대단한 놈이다.&lt;/p>
@@ -1237,7 +1237,7 @@ rewrite ^ https://$server_name$request_uri? permanent;
 &lt;h2 id="2020년에-적는-코멘트">2020년에 적는 코멘트&lt;/h2>
 &lt;p>Google이 밀어준다고 https가 이렇게 활성화 될 줄 누가 알았겠어요? ㄷㄷ;;;&lt;/p>
 &lt;p>그당시에도 Let&amp;rsquo;s encrypt가 존재는 했었지만 그떄는 별로 인기가 없었고 https는 개인서버 운영자에게는 단순히 귀찮을 존재였을 뿐입니다.&lt;/p>
-&lt;p>지금은 안쓰면 검색노출도 안되는 기본적인 존재이지만요. 본 서버는 아마 바뀔지도 모르지만 기본적으로 Kubernetes + ingress nginx 환경에서 http&lt;strong>s&lt;/strong>로 제공됩니다.&lt;/p></description></item><item><title>(X11 Forwarding) Putty, GUI, SSH</title><link>https://blog.iwanhae.ga/p/x11-forwarding/</link><pubDate>Wed, 03 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/x11-forwarding/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/x11-forwarding/example.png" alt="Featured image of post (X11 Forwarding) Putty, GUI, SSH" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>지금은 안쓰면 검색노출도 안되는 기본적인 존재이지만요. 본 서버는 아마 바뀔지도 모르지만 기본적으로 Kubernetes + ingress nginx 환경에서 http&lt;strong>s&lt;/strong>로 제공됩니다.&lt;/p></description></item><item><title>(X11 Forwarding) Putty, GUI, SSH</title><link>https://blog.iwanhae.kr/p/x11-forwarding/</link><pubDate>Wed, 03 Feb 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/x11-forwarding/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/x11-forwarding/example.png" alt="Featured image of post (X11 Forwarding) Putty, GUI, SSH" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>본인은 리눅스 조작할때 어지간해서는 GUI로 안하고 SSH로 접속해 콘솔환경으로 전부 끝내는 경향이 있다. 이유는 여러가지 있지만 가장 큰 이유는 아마 리눅스 GUI의 미묘하게 불편한 응답속도에 있다. 리눅스가 원래 GUI환경이 있을꺼란 전재하에 만들어진 운영체제가 아니다보니 윈도나 맥에비해 미묘한 딜레이가 있는데 개인적으로 이 이질감이 싫어 리눅스에서 GUI는 거의 안쓴다. (리눅스 콘솔은 가끔쓰지만 보통은 윈도에서 SSH환경을 더 선호한다.)&lt;/p>
 &lt;p>하지만 작업을 하다보면 GUI가 훨씬더 편할때가 꼭 있다. 예를들면 하드용량 확보할때 Baobab을 써 각 폴더의 상태를 보며 작업하면 무지 편하고 cmake할때 일일히 옵션들을 켤지 끌지 정해주는것보다 마우스로 클릭클릭하며 정해주는게 더 편하다.&lt;/p>
 &lt;p>이런 상황에 빠져있을 몇몇사람들을 위해 ssh X11 Forwarding 이라는 기능을 소개한다.
@@ -1284,7 +1284,7 @@ rewrite ^ https://$server_name$request_uri? permanent;
 &lt;p>해보진 않았지만 &lt;code>파이어폭스&lt;/code>나 &lt;code>이클립스&lt;/code>도 잘 실행이되서 윈도우에서 원격으로 리눅스 개발을 하는사람도 존재한다는 모양이다.&lt;/p>
 &lt;p>참고로 이 방법은 픽셀 하나하나를 전송하는 스트리밍 방식과는다르게 &lt;strong>어디에 버튼을 만들고 어디에 이러이러한 글씨를 써놔라&lt;/strong>라는 정보를 전송하고 그리는건 이 화면이 보이는 컴퓨터에서 행해지는것이기 때문에 딜레이같은것도 없고 네트워크 트래픽도 별로 많이 잡아먹진 않는다. 다만 X11을 이용하지 않고 자체적인 수단으로 GUI를 구현하는 프로그램의 경우 &lt;del>(ex : 동영상플레이어, 게임)&lt;/del> 작동하지 않는다.&lt;/p>
 &lt;h2 id="결론">결론&lt;/h2>
-&lt;p>즐거운 리눅스 되세요~&lt;/p></description></item><item><title>라즈베리파이에서 FFMPEG로 인코딩 하기</title><link>https://blog.iwanhae.ga/p/pi-ffmpeg/</link><pubDate>Sat, 09 Jan 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/pi-ffmpeg/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/pi-ffmpeg/encode.png" alt="Featured image of post 라즈베리파이에서 FFMPEG로 인코딩 하기" />&lt;h2 id="서론">서론&lt;/h2>
+&lt;p>즐거운 리눅스 되세요~&lt;/p></description></item><item><title>라즈베리파이에서 FFMPEG로 인코딩 하기</title><link>https://blog.iwanhae.kr/p/pi-ffmpeg/</link><pubDate>Sat, 09 Jan 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/pi-ffmpeg/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/pi-ffmpeg/encode.png" alt="Featured image of post 라즈베리파이에서 FFMPEG로 인코딩 하기" />&lt;h2 id="서론">서론&lt;/h2>
 &lt;p>현재 본인은 이 블로그서버를 운영하며 친구들, 지인끼리 동영상공유로도 사용하고 있다. 문제가 있다면 코덱이 워낙 다양한탓에 HTML5로 재생이 안되던가 스마트폰으로 스트리밍으로 재생하기에는 너무 무거운 동영상들이 있다는 것이다. 보통은 해당영상을 다른버전으로 다운받아 해결하지만 그게 힘들경우 따로 인코딩을 하는데 지금부터 라즈베리파이에서 인코딩을 하는법을 소개하겠다.&lt;/p>
 &lt;p>하는것은 자유지만 미리 말해두자면 라즈베리 파이의 성능이 성능인만큼 꽤 느리다. 보통 0.12배속으로 인코딩이 진행되는데 24분짜리 영상 인코딩하는데 3~4시간정도 걸린다. (참고로 오드로이드 XU4의 경우 1.1배속정도 나온다.)&lt;del>(단점은 쿨러소리가 상당하다는점)&lt;/del>&lt;/p>
 &lt;h2 id="준비물">준비물&lt;/h2>
@@ -1339,7 +1339,7 @@ mv &lt;span class="s2">&amp;#34;./tmp/&lt;/span>&lt;span class="nv">$i&lt;/span>
 &lt;h2 id="덤2">덤2&lt;/h2>
 &lt;p>참고로 본인은 이렇게 사용하고 있다.
 &lt;img src="./---_20160103_110403_LLS.jpg" alt="" />&lt;/p>
-&lt;p>사람없을때는 ODROID XU4가 엄청나게 시끄러운 소음을 내며 인코딩 사람 있을때는 RASPBERRYPI2에 전원을 공급하고 NFS로 ODROID XU4의 영상파일에 접근해 영상 인코딩.&lt;/p></description></item><item><title>우분투, NFS 설정</title><link>https://blog.iwanhae.ga/p/nfs_guideline/</link><pubDate>Sun, 03 Jan 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/nfs_guideline/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/nfs_guideline/serverside-scripting-electronics-accessory-file-system-andrew-computer-icon.jpg" alt="Featured image of post 우분투, NFS 설정" />&lt;h3 id="서버쪽">서버쪽&lt;/h3>
+&lt;p>사람없을때는 ODROID XU4가 엄청나게 시끄러운 소음을 내며 인코딩 사람 있을때는 RASPBERRYPI2에 전원을 공급하고 NFS로 ODROID XU4의 영상파일에 접근해 영상 인코딩.&lt;/p></description></item><item><title>우분투, NFS 설정</title><link>https://blog.iwanhae.kr/p/nfs_guideline/</link><pubDate>Sun, 03 Jan 2016 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/nfs_guideline/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/nfs_guideline/serverside-scripting-electronics-accessory-file-system-andrew-computer-icon.jpg" alt="Featured image of post 우분투, NFS 설정" />&lt;h3 id="서버쪽">서버쪽&lt;/h3>
 &lt;p>&lt;code>apt-get install nfs-common nfs-kernel-server rpcbind&lt;/code>&lt;/p>
 &lt;p>설치 완료후&lt;/p>
 &lt;p>&lt;code>/etc/exports&lt;/code>&lt;/p>
@@ -1367,9 +1367,9 @@ insecure : 인증안되도 접속허가
 설치해준뒤&lt;/p>
 &lt;p>&lt;code>mount -t nfs [주소]:[/경로] [/마운트 할장소]&lt;/code>&lt;!-- raw HTML omitted -->
 &lt;code>(ex : mount -t nfs blog.iwanhae.ga:/home/test/testfolder /home/anywhereyouwant)&lt;/code>&lt;/p>
-&lt;p>해주면 끗&lt;/p></description></item><item><title>리눅스, 하드디스크를 절전모드로 두기 (hdparm)</title><link>https://blog.iwanhae.ga/p/introducing-hdparm/</link><pubDate>Sat, 12 Dec 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/introducing-hdparm/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/introducing-hdparm/harddrive-icon-18.jpg" alt="Featured image of post 리눅스, 하드디스크를 절전모드로 두기 (hdparm)" />&lt;h1 id="서론">서론&lt;/h1>
-&lt;p>&lt;img src="https://blog.iwanhae.ga/img_server/server_2.jpg" alt="" />
-&lt;img src="https://blog.iwanhae.ga/img_server/server_1.png" alt="" />&lt;/p>
+&lt;p>해주면 끗&lt;/p></description></item><item><title>리눅스, 하드디스크를 절전모드로 두기 (hdparm)</title><link>https://blog.iwanhae.kr/p/introducing-hdparm/</link><pubDate>Sat, 12 Dec 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/introducing-hdparm/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/introducing-hdparm/harddrive-icon-18.jpg" alt="Featured image of post 리눅스, 하드디스크를 절전모드로 두기 (hdparm)" />&lt;h1 id="서론">서론&lt;/h1>
+&lt;p>&lt;img src="https://blog.iwanhae.kr/img_server/server_2.jpg" alt="" />
+&lt;img src="https://blog.iwanhae.kr/img_server/server_1.png" alt="" />&lt;/p>
 &lt;p>요런식으로 서버를 운영하다보니 하드디스크 돌아가는 소리가 좀 거슬린다&amp;hellip;.
 (특히나 소음 심하다는 Hitachi제 하드디스크&amp;hellip;.)&lt;/p>
 &lt;p>그래서 하드디스크를 절전상태로 두는 간단한 방법을 소개한다.&lt;/p>
@@ -1408,7 +1408,7 @@ Timing buffered disk reads: 48 MB in 3.13 seconds = 15.35 MB/sec
 &lt;p>&lt;code>sudo hdparm -M 128 /dev/sda&lt;/code>를 통해 하드디스크의 성능을 희생해 더 조용하게 만든다던가&lt;/p>
 &lt;p>&lt;code>sudo hdparm -M 254 /dev/sda&lt;/code>를 통해 하드디스크의 성능을 최대로 뽑아냄과 동시에 엄청난 소음에 시달릴수도 있고&lt;/p>
 &lt;p>&lt;code>sudo hdparm -f /dev/sda&lt;/code>나 &lt;code>sudo hdparm -F /dev/sda&lt;/code>를 통해 읽기버퍼(전자)나 쓰기버퍼(후자)를 지워버릴수도 있다.&lt;/p>
-&lt;p>여러가지를 설정할수 있고 설정방법도 설정할려는 종류에 따라 모두 다르기때문에 자세한건 구글링 해보길 추천하며 글을 마친다.&lt;/p></description></item><item><title>원리부터 파악하는 OpneCV</title><link>https://blog.iwanhae.ga/p/introduction-to-opencv/</link><pubDate>Sat, 03 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/introduction-to-opencv/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/introduction-to-opencv/OpenCV_Logo_with_text.png" alt="Featured image of post 원리부터 파악하는 OpneCV" />&lt;h3 id="서론">서론&lt;/h3>
+&lt;p>여러가지를 설정할수 있고 설정방법도 설정할려는 종류에 따라 모두 다르기때문에 자세한건 구글링 해보길 추천하며 글을 마친다.&lt;/p></description></item><item><title>원리부터 파악하는 OpneCV</title><link>https://blog.iwanhae.kr/p/introduction-to-opencv/</link><pubDate>Sat, 03 Oct 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/introduction-to-opencv/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/introduction-to-opencv/OpenCV_Logo_with_text.png" alt="Featured image of post 원리부터 파악하는 OpneCV" />&lt;h3 id="서론">서론&lt;/h3>
 &lt;p>OpenCV에 대해 포스팅되는 글들에대해 개인적으로 분류를 해보자면 크게 두가지 부류가 있다.
 하나는 &amp;ldquo;&lt;strong>나도 이게 어떻게 되는지는 모르지만 일단 되는류&lt;/strong>&amp;rdquo; 고 나머지 하나는 &amp;ldquo;&lt;strong>난 이미 너무 자세히 알고있어서 기초에대해 포스팅할 마음이 안생기는류&lt;/strong>&amp;ldquo;이다.&lt;/p>
 &lt;p>이것이 진실로 그러하든 그러하지않던 초보자에게 한글로된 문서만 보고 OpenCV입문이란 힘든다는것은 아마 대부분의 사람들이 공감할것이라 믿는다.&lt;/p>
@@ -1669,7 +1669,7 @@ imshow(&amp;quot;output&amp;quot;, output);
 *보다싶이 이 방법으로 **&amp;ldquo;피부만&amp;rdquo;*&lt;em>인식하기는 힘들다.&lt;/em>&lt;/p>
 &lt;h3 id="opencv에-있는-알고리즘-사용해보기">OpenCV에 있는 알고리즘 사용해보기&lt;/h3>
 &lt;p>작성중&lt;/p>
-&lt;p>-&amp;gt; 작성예정없음&lt;/p></description></item><item><title>공기저항을 고려한 자유낙하</title><link>https://blog.iwanhae.ga/p/free-fall-with-air-resistance/</link><pubDate>Tue, 22 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/free-fall-with-air-resistance/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/free-fall-with-air-resistance/clipart807887.png" alt="Featured image of post 공기저항을 고려한 자유낙하" />&lt;pre>&lt;code>k는 현재의 공기저항 상수
+&lt;p>-&amp;gt; 작성예정없음&lt;/p></description></item><item><title>공기저항을 고려한 자유낙하</title><link>https://blog.iwanhae.kr/p/free-fall-with-air-resistance/</link><pubDate>Tue, 22 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/free-fall-with-air-resistance/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/free-fall-with-air-resistance/clipart807887.png" alt="Featured image of post 공기저항을 고려한 자유낙하" />&lt;pre>&lt;code>k는 현재의 공기저항 상수
 s는 거리
 v는 속도
 a는 가속도
@@ -1689,7 +1689,7 @@ g는 중력가속도
 &lt;p>하지만 고도가 높아질수록 공기밀도에 변화가 생겨 위에서 k로 잡은 상수가 변수가 되버리고&lt;/p>
 &lt;p>이는 곧 오차로 나타나 버린다.&lt;/p>
 &lt;p>-위 수식은 LaTeX로 작성됨-&lt;/p>
-&lt;p>-그전에 LaTeX를 쓰기위해 이 수식을 유도함-&lt;/p></description></item><item><title>엔트로피 인코딩 (엔트로피 부호화)</title><link>https://blog.iwanhae.ga/p/entropy_encoding/</link><pubDate>Mon, 21 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/entropy_encoding/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/entropy_encoding/2362278.png" alt="Featured image of post 엔트로피 인코딩 (엔트로피 부호화)" />&lt;p>무손실 압축같은 분야에서 애용되는 기법으로&lt;/p>
+&lt;p>-그전에 LaTeX를 쓰기위해 이 수식을 유도함-&lt;/p></description></item><item><title>엔트로피 인코딩 (엔트로피 부호화)</title><link>https://blog.iwanhae.kr/p/entropy_encoding/</link><pubDate>Mon, 21 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/entropy_encoding/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/entropy_encoding/2362278.png" alt="Featured image of post 엔트로피 인코딩 (엔트로피 부호화)" />&lt;p>무손실 압축같은 분야에서 애용되는 기법으로&lt;/p>
 &lt;p>여기서 엔트로피(entropy)는&lt;/p>
 &lt;pre>&lt;code>&amp;lt;통신&amp;gt; 정보량의 기대치를 이르는 말. [비슷한 말] 평균 정보량.
 &lt;/code>&lt;/pre>
@@ -1700,7 +1700,7 @@ g는 중력가속도
 같은걸&lt;/p>
 &lt;p>&lt;code>1(0, 3개)(10,2개)1(10,2개).....(0,5개)&lt;/code>
 와 같이 부호화 해준다는 거다.&lt;/p>
-&lt;p>대표적 엔트로피 인코딩 기법으론 &lt;code>허프만 부호화&lt;/code>, &lt;code>범위 부호화&lt;/code>와 &lt;code>산술 부호화&lt;/code>, &lt;code>런 렝스 코딩&lt;/code> 등이 있다.&lt;/p></description></item><item><title>우분투 서버 한글화 절차</title><link>https://blog.iwanhae.ga/p/locale_setting/</link><pubDate>Sun, 20 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.ga/p/locale_setting/</guid><description>&lt;img src="https://blog.iwanhae.ga/p/locale_setting/ubuntu.png" alt="Featured image of post 우분투 서버 한글화 절차" />&lt;pre>&lt;code>apt-get install language-pack-ko
+&lt;p>대표적 엔트로피 인코딩 기법으론 &lt;code>허프만 부호화&lt;/code>, &lt;code>범위 부호화&lt;/code>와 &lt;code>산술 부호화&lt;/code>, &lt;code>런 렝스 코딩&lt;/code> 등이 있다.&lt;/p></description></item><item><title>우분투 서버 한글화 절차</title><link>https://blog.iwanhae.kr/p/locale_setting/</link><pubDate>Sun, 20 Sep 2015 00:00:00 +0000</pubDate><guid>https://blog.iwanhae.kr/p/locale_setting/</guid><description>&lt;img src="https://blog.iwanhae.kr/p/locale_setting/ubuntu.png" alt="Featured image of post 우분투 서버 한글화 절차" />&lt;pre>&lt;code>apt-get install language-pack-ko
 locale-gen ko_KR.UTF-8
 LANG=ko_KR.URF-8
 LANGUAGE=ko_KR:ko:en_GB:en
