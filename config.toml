@@ -1,4 +1,4 @@
-baseurl = "https://blog.iwanhae.kr"
+baseurl = "https://iwanhae.github.io"
 languageCode = "ko-kr"
 theme = "stack"
 paginate = 10
