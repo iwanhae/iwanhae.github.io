@@ -62,10 +62,16 @@ DefaultContentLanguage = "ko"                   # Theme i18n support
         weight = -100
         pre = "home"
     [[menu.main]]
-        identifier = "about-cn"
-        name = "About"
+        identifier = "about-kr"
+        name = "About (kr)"
         url = "welcome-to-iwan"
         weight = -90
+        pre = "user"
+    [[menu.main]]
+        identifier = "about-en"
+        name = "About (en)"
+        url = "wanhae-lee"
+        weight = -80
         pre = "user"
     [[menu.main]]
         identifier = "archives"
